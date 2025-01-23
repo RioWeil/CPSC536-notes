@@ -1,0 +1,80 @@
+\section{Finishing Up Shor, The Hidden Subgroup Problem}
+
+\subsection*{Final Remarks on Shor's Algorithm}
+We looked at the order finding algorithm last time. The runtime was $\tilde{O}((\log N)^2)$ for the classical part and $\tilde{O}((\log N)^3)$ for the quantum part (naively). This came from the repeated squaring of $x(s) = a^s\mod N$. But we can actually do this in $(\log N)^2$ time if we do a Fourier transform instead of doing the ``schoolboy'' multiplication. Then, the complexity of each squaring is just $\tilde{O}(\log N)$ and so all of the squarings takes $\tilde{O}((\log N)^2)$ time.
+
+But last year, Oded Regev actually found a way to do this in $\tilde{O}((\log N)^{1.5})$ time. He reduced the complexity of the quantum part!
+
+Idea: What if instead of choosing $a$, we chose $a, b, c, d$. Consider $x(s_1, s_2, s_3, \ldots s_k) = a_1^{s_1}a_2^{s_2}\ldots a_k^{s_k} \mod N$ where $k$ is to be optimized. This has a period in a higher dimensional space of $\ZZ_k$. For each of the $s_i$, we don't have to go as far to find the period; in a higher-dimensional space the period is shorter, so we can raise the numbers to a smaller power and so this gives us some savings.
+
+\subsection*{Basic Group Theory}
+\begin{defbox}{: Groups}
+    A group $G = (S, \alpha)$ is defined by a set $S$ and a function $\alpha: S \times S \to S$ such that:
+    \begin{enumerate}
+        \item (Identity) $\exists e \in S$ such that $\forall g \in S$, $\alpha(g, e) = g = \alpha(e, g)$
+        \item (Inverses) $\forall g \in S$, $\exists h \in S$ such that $gh = e = hg$. 
+        \item (Associativity) $\forall g, h, k \in S$ such that $\alpha(\alpha(g,h), k) = \alpha(g, \alpha(h, k))$. 
+    \end{enumerate}
+    We didn't include it in the axiom, but the inverse is unique. The \emph{order} of the group is $\abs{S}$. Sometimes the notation is abused and we write $\abs{G}$. A group $G$ is Abelian if the $\alpha$ operation commutes i.e. $\forall g, h \in S$ we have $\alpha(g, h) = \alpha(h, g)$. 
+\end{defbox}
+
+Some examples:
+\begin{enumerate}
+    \item $G = \mathbb{F}_2^n$, with $\alpha = $ componentwise addition.
+    \item $G = \ZZ$, with $\alpha = $ addition.
+    \item $G = GL_n(\CC)$ the set of invertible $n \times n$ matrices with entries in $\CC$ (with $\alpha = $ matrix multiplication.)
+    \item $G = D_{2n}$, the set of symmetries of a regular $n$-gon. A regular 3-gon is a triangle, a regular 4-gon is a square, a regular 5-gon is a pentagon, and so on. Let's take the square/4-gon as an example. The symmetries are the rotations and reflections $\set{0^\circ = e, 90^\circ = \sigma, 180^\circ = \sigma^2, 270^\circ = \sigma^3, \tau, \tau\sigma, \tau\sigma^2, \tau\sigma^3}$. The group operation is composition of the symmetries. $D_{2n}$ can be thus written as $\set{\sigma^s\tau^a \vert s \in \ZZ_n, a \in \ZZ_2}$. It will later be convenient to use the slightly different representation of the element. We can write the elements as $(s, a)$ where $(s, a)\cdot(t, b) = (s + (-1)^a t, a + b)$. 
+\end{enumerate}
+1, 2 are examples of Abelian groups, while 3,4 are not. 
+
+\begin{defbox}{: Subgroups}
+    Let $G = (S, \alpha)$ be a group. We say $T \subseteq S$ form s a subgroup of $G$ if:
+    \begin{enumerate}
+        \item $T$ contiains the $e$ of $G$
+        \item $T$ is closed under $\alpha$, that is $\forall g, h \in T$ we have $\alpha(g, h) \in T$. 
+        \item $T$ is inverse closed, i.e. $\forall g \in T$ we have $g^{-1} \in T$. 
+    \end{enumerate}
+    This definition defines a group $(T, \alpha\vert_T)$ (where $\alpha\vert_T$ denotes the restriction of the $\alpha$ operation onto $T \times T$ (rather than $S \times S$)).
+\end{defbox}
+
+Examples:
+\begin{enumerate}
+    \item Any group $G$ has the trivial subgroups $\set{e}, G$. 
+    \item Suppose $G = \mathbb{F}_2^n$. Then, $\set{a, (0, \ldots, 0)}$ where $0^n \neq a \in \mathbb{F}_2^{n}$. This follows from the fact that $a 0^n = a$, $0^n 0^n = 0^n$, $aa = 0^n$ and so the group is closed, has the identity element, and contains all inverses, as required.
+    \item Take $G = \ZZ$. Then, $r\ZZ = \set{r \cdot z \vert z \in \ZZ}$ for $0 \neq r \in \ZZ$ is a subgroup.
+    \item For $y \in \ZZ_n$, $T_y \coloneqq \set{(0, 0), (y, 1)}$ is a subgroup of $D_{2n}$, as $(y, 1) \cdot (y, 1) = (0, 0)$. 
+\end{enumerate}
+
+\begin{defbox}{: Hidden Subgroup Problem}
+    Let $G$ be a group and $\H$ denote a set of subgroups of $G$. Let $\Sigma$ be an alphabet with $\abs{\Sigma} \geq \abs{G}$. The HSP$(G, \H, \Sigma)$ problem is to compute the function $f: D \subseteq \Sigma^G \to \H$ where $x \in D$ if and only if there exists $H \in \H$ with $x(g) = x(h) \iff gH = hH$ where $gH = \coloneqq \set{gh \vert h \in H}$
+\end{defbox}
+
+\begin{propbox}{: Quantum query complexity of HSP}
+    \label{QComplexity-HSP}
+    Let $G$ be a finite group. Let $\H$ be the set of all subgroups of $G$ and let be $\Sigma$ be an alphabet such that $\abs{\Sigma} \geq \abs{G}$. Then, $Q(\text{HSP}(G, \H, \Sigma)) = O((\log \abs{G})^2)$.
+\end{propbox}
+
+Example: Simon's problem, with $G = \mathbb{F}_2^n \to O(n^2)$. 
+
+\subsection*{Interlude: Mixed Quantum States}
+So far:
+\begin{enumerate}
+    \item A quantum state is a vector $\ket{\psi} \in \CC^d$
+    \item A $\Gamma$-outcome measurement on $\CC^d$ applied to $\ket{\psi}$ results in $i \in \Gamma$ according to some probability $p_i$. The state becomes $\ket{\psi_i}$ if $i =$ measurement outcome.
+\end{enumerate}
+In Simon's/Period finding problems:
+\begin{enumerate}
+    \item Either we did not care about the measurement outcome (first measurement)
+    \item Or we did care about the distribution on the measurement outcome, but not the distribution on the state it ends up in $\ket{\psi_i}$ (second measurement)
+\end{enumerate}
+
+In either case, we didn't care about the distribution on the post-measurement state. We have post measurement state $\ket{\psi_i}, p_i$. There are two ways of doing analysis.
+\begin{enumerate}
+    \item Naive but hard way: Do a for loop; for each $i \in \Gamma$, analyze the post-processing effect on the $\ket{\psi_i}$, then ``average over the effects''.
+    \item Sophisticated (but easier) way: define a single objkect that captures the distribution on the post-measurement states, and analyze the effects on the single object.
+\end{enumerate}
+
+What is the mystery single object? Is is the density matrix $\rho \in \CC^{d \times d}$, defined as:
+\begin{equation}
+    \rho = \sum_{i \in \Gamma}p_i \dyad{\psi_i}{\psi_i}
+\end{equation}

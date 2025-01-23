@@ -1,0 +1,68 @@
+\section{Time Complexity of Shor's Algorithm}
+
+A remark; a quantum state is denoted as $\ket{v} \in \CC^d$. When we think about this, we shouldn't think about this vector as written down on a piece of paper, but rather as a complex probability distribution. If we think about the probabilistic setting - if we have $n$ fair coins, then the state of the system can be described as a (uniform) vector on $\RR^{2n}$.
+
+In Shor's algorithm for example, we deal with states $\in \CC^{2n}$ where $n \sim 2\log N$ where $N$ is the factor we are trying to factor. The proof of Shoir's algorithm is that it scales $\text{poly} n$. 
+
+As a reminder - in the order finding problem, given $a, N \in \NN$ with $a < N$ coprime to $N$ the order of $a \mod N$ is the least $r \in \NN$ such that $a^r = 1 \mod N$. The goal is to find $r$.
+
+\begin{propbox}{: Time Complexity of order finding}
+    $\exists$ a quantum algorithm that solves the order finding problem in time $O(\log^3 N \log\log N)$. 
+\end{propbox} 
+\begin{proof}
+    \begin{enumerate}
+        \item Consider the function $x: \ZZ \to \ZZ_N$ defined by $x(s) = a^s \mod N$. This $x$ satisfies $x(s) = x(t) \iff s - t \in r\ZZ$.
+
+        $\boxed{\impliedby}$ $s = t + rk$, $k \in \ZZ$. So, $x(s) = a^{t + rk} = a^t (a^r)^k \mod N = a^t \mod N = x(t)$.
+    
+        $\boxed{\implies}$ Write $s - t = qr + c$ where $q \in \ZZ$ and $c \in \set{0, 1, \ldots, r-1}$. Then:
+        \begin{align*}
+            &x(s) = x(t)
+            \\ \implies &a^s = a^t \mod N
+            \\ \implies &a^{s-t} = 1 \mod N 
+            \\ \implies &a^{qr + c} = 1 \mod N 
+            \\ \implies &a^c = 1 \mod N
+            \\ \implies &c = 0 \text{ by minimality of period $r$}
+            \\ \implies &s - t \in r \in \ZZ
+        \end{align*}
+    
+        The cost of computing $x(s)$ - the maximum $s$ is $2^n$ where $n = \lceil 2\log_2 N \rceil + 1$. Consider repeated squaring to compute $a^k$:
+        \begin{equation}
+            a \mod N \to a^2 \mod N \to (a^2)^2 \mod N \to a^8 \to \ldots \to a^k
+        \end{equation}
+        We then have $(\log N)^2 \log k \leq (\log N)^2 n \leq O((\log N)^3)$. So, we have the time complexity of computing $x$, which corresponds exactly to the time complexity of instantiating the quantum oracle for $x$ - i.e. the $O_x$ part of the algorithm. 
+        \item Now, we need to account for the non-$O_x$ part of the query algorithm. 
+        \begin{enumerate}
+            \item We need to consider the Hadamard transform that takes us from $\ket{0}^{\otimes n}$ to $\frac{1}{\sqrt{2^n}}\sum_{s=0}^{2^n-1}\ket{s}$ where the number of steps is $n$ (we apply $n$ Hadamard transforms).
+            \item QFT: There exists a turing machine that on input $n \in \NN$ outputs the description of quantum circuit that implements a unitary approximating $QFT_{2^n}$ to error $\e$ in operator norm distance (i.e. $\norm{U - QFT_{2^n}} \leq \e$) in order $O(n^2\text{poly}(\log(n/\e)))$ steps. Reference: Wikipedia + Solovay-Kitaev theorem (wikipedia uses non-standard gates, and SK theorem allows for approximation of said non-standard gates with logarithmic cost in terms of $\e$). Apply with $\e = \frac{10^{-10}}{\log\log N} = O(\frac{1}{\log n})$. So total number of steps to describe the QFTS is $O(n^2\text{poly}(\log n))$. 
+            \item There is a final step; generate $z \in \set{0, 1}^n$ such that with probability $0.01\frac{1}{\log \log N}$ we have $\abs{\frac{z}{2^n} - \frac{j}{r}} < \frac{1}{2 \cdot 2^n}$ where $j$ coprime to $r$. Then extract $r$ by unmerating $r' \in \NN, r \leq N$, $j' \in \set{0, 1, \ldots, r'-1}$ coprime to $r'$. But this costs $N$. So naively we can do no better than the classical algorithm. But we can do better! Consider the \textbf{continued fractions algorithm}: There exists a Turing machine that on input $b_1\ldots b_n \in \set{0, 1}^n \neq 0^n$ outputs all of the convergents(?) $(p_i, q_i)$ of $\phi = 0b_1b_2\ldots b_n \in (0, 1)$ in $O(n^3)$ steps, where $p_i, q_i \in \NN, p_i/q_i \leq 1$ and $p_i$ is coprime to $q_i$ for all $i$. Moreoever, suppose there exists coprime $p < q \in \NN$ usch that:
+            \begin{equation}
+                \abs{\phi - \frac{p}{q}} \leq \frac{1}{2q^2}
+            \end{equation}
+            then there exists $a \in [k]$ such that $p = p_a$ and $q = q_a$. Recall $\abs{\frac{z}{2^n} - \frac{j}{r}} \leq \frac{1}{2\cdot 2^n} < \frac{1}{2N^2} \leq \frac{1}{2r^2}$. As an example, cosnider $0.10010 \to \frac{1}{2} + \frac{1}{16} = \frac{9}{16}$. The convergents are:
+            \begin{equation}
+                \frac{9}{16} = \frac{1}{\frac{16}{9}} = \frac{1}{1 + \frac{7}{9}} = \frac{1}{1 + \frac{1}{\frac{9}{7}}} = \frac{1}{1 + \frac{1}{1 + \frac{2}{7}}} = \frac{1}{1 + \frac{1}{1 + \frac{1}{3 + \frac{1}{2}}}}
+            \end{equation}
+            To get the convergents, we just draw circles; we have $\frac{1}{1} = \frac{p_1}{q_1}$ in the first step, then $\frac{1}{1 + \frac{1}{1}} = \frac{1}{2} = \frac{p_2}{q_2}$ in the second step, and $\frac{1}{1 + \frac{1}{1 + \frac{1}{3}}} = \frac{4}{7} = \frac{p_3}{p_4}$ in the third step, and so on. Then in the last step we have $\frac{p_4}{q_4} = \frac{9}{16}$. This is the algorithm for computing the $p_i, q_i$s. The guarantee is that in the good case of the $z$s, the $p/q = r$. 
+
+            So, the cost of each repeat is:
+            \begin{equation}
+                n + (\log N)^2 + 1 + n^2\text{poly}(\log n) + n^3
+            \end{equation}
+            where the first term is the Hadamard, the second term is the oracle, the third term is the computational basis measurement, the fourth term is the QFT, and the last term is the continued fractions. The total number of repeats is $\log\log(N)$, so then we are dominated by the last term and have a total cost of $O(n^3\log n)$. 
+        \end{enumerate} 
+    \end{enumerate}
+\end{proof}
+
+\begin{algobox}{: Quantum Factoring (Shor)}
+    Input: $N \in \NN$ (represented in binary)
+    \begin{enumerate}
+        \item Check if $N$ is even. If even, output $2$.
+        \item Check if $N$ is a $k$th power of a natural number $2, \ldots, \lceil \log N \rceil$.
+        \item Choose $a \leftarrow \set{1, \ldots, N-1}$. Compute $b = \text{gcd}(a, N)$ by Euclid's algorithm. If $b > 1$, then output $b$, else continue
+        \item Compute $r = \text{ord}_N(a)$. 
+        \item Compute $d = \text{gcd}(a^{r/2} - 1 \mod N, N)$. If $d > 1$. If $d > 1$, output $d$, else output ``don't know''. We are guaranteed that the algorithm doesn't output ``don't know' with probability at least 1/2, in which case it is constant.
+    \end{enumerate}
+\end{algobox}
+
+Anecdote - Daochen thought he had broken Shor when he tried to code this up without the $\mod N$. Important to have! Though left out by many experts\ldots

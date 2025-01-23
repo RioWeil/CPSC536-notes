@@ -1,0 +1,38 @@
+\section{Quantum Walk Continued}
+\textcolor{red}{Missed this lecture - notes based on provided references.}
+To understand the behavior of a discrete-time quantum walk, it will be helpful to compute its spectral decomposition. Let us show the following:
+
+\begin{thmbox}{: Spectrum of Quantum Walk}
+    Fix an $N \times N$ stochastic matrix $P$ and let $\set{\ket{\lambda}}$ denote a complete set of orthonormal eigenvectors of the $N \times N$ matrix $D$ with entries $D_{jk} = \sqrt{P_{jk}P_{kj}}$ with eigenvalues $\set{\lambda}$. Then, the eigenvalues of the discrete-time quantum walk $U = S(2\Pi - 1)$ corresponding to $P$ are $\pm 1$ and $\lambda \pm i\sqrt{1-\lambda^2} = \exp(\pm i \arccos \lambda)$.
+\end{thmbox}
+\begin{proof}
+    Define an isometry:
+    \begin{equation}
+        T \coloneqq \sum_{j=1}^N \dyad{\psi_j}{j} = \sum_{j, k = 1}^N \sqrt{P_{kj}}\dyad{j, k}{j}
+    \end{equation}
+    which maps states in $\CC^N$ to states in $\CC^N \otimes \CC^N$, and let $\ket{\tilde{\lambda}} \coloneqq T\ket{\lambda}$. Notice then that:
+    \begin{equation}
+        TT^\dag = \sum_{j, k=1}^N \ket{\psi_j}\braket{j}{k}\bra{\psi_k} = \sum_{j=1}^N \dyad{\psi_j}{\psi_j} = \Pi
+    \end{equation}
+    whereas:
+    \begin{equation}
+        T^\dag T = \sum_{j, k = 1}^N \ket{j}\braket{\psi_j}{\psi_k}\bra{k} = \sum_{j, k, l, m=1}^N\sqrt{P_{lj}P_{mk}}\ket{j}\braket{j, l}{k, m}\bra{k} = \sum_{j, l}^NP_{l, j}\dyad{j}{j} = I
+    \end{equation}
+    and:
+    \begin{equation}
+        T^\dag S T = \sum_{j, k=1}^N \dyad{j}{\psi_j}S\dyad{\psi_k}{k} = \sum_{j, k, l, m=1}^N \sqrt{P_{lk}P_{mk}}\dyad{j}{j, l}S\dyad{k, m}{k} = \sum_{j, k=1}^N\sqrt{P_{jk}P_{kj}}\dyad{j}{k} = D.
+    \end{equation}
+    Applying the walk operator $U$ to $\ket{\tilde{\lambda}}$ gives:
+    \begin{equation}
+        U\ket{\tilde{\lambda}} = S(2\Pi - 1)\ket{\tilde{\lambda}} = S(2TT^\dag - 1)T\ket{\lambda} = 2ST\ket{\lambda} - ST\ket{\lambda} = S\ket{\tilde{\lambda}}
+    \end{equation}
+    We see tht the subspace span $\set{\ket{\tilde{\lambda}}, S\ket{\tilde{\lambda}}}$ is invariant under $U$, so we can find eigenvectors of $U$ within this subspace. Now, let $\ket{\mu} \coloneqq \ket{\tilde{\lambda}} - \mu S\ket{\tilde{\lambda}}$, and let us choose $\mu \in \CC$ so that $\ket{\mu}$ is an eigenvector of $U$. We then have:
+    \begin{equation}
+        U\ket{\mu} = S\ket{\tilde{\lambda}} - \mu(2\lambda S\ket{\tilde{\lambda}} - \ket{\tilde{\lambda}}) = \mu\ket{\tilde{\lambda}} + (1-2\lambda\mu)S\ket{\tilde{\lambda}}
+    \end{equation}
+    Thus $\mu$ will be an eigenvalue of $U$ corresponding to $\ket{\mu}$ provided that $\mu^2 - 2\lambda\mu + 1 = 0$, so:
+    \begin{equation}
+        \mu = \lambda \pm i \sqrt{1-\lambda^2}.
+    \end{equation}
+    Finally, note that for any vector in the orthogonal complement of $\text{span}\set{\ket{\tilde{\lambda}}, S\ket{\tilde{\lambda}}}$, $U$ simply acts as $-S$ (since $\Pi = TT^\dag = \sum_\lambda T\dyad{\lambda}{\lambda}T^\dag$ $= \sum_\lambda \dyad{\lambda}{\lambda}$ projects onto $\text{span}\set{\ket{\tilde{\lambda}}}$). In this subspace, the eigenvalues are $\pm 1$. 
+\end{proof}

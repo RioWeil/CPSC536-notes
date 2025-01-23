@@ -1,0 +1,144 @@
+\section{Quantum Walk Conclusion, Quantum Phase Estimation}
+\textcolor{red}{Missed this lecture - notes based on provided references.}
+
+\subsection*{Hitting Time for Random Walk}
+We can use random walks to formulate a generic search algorithm, and quantizing this algorithm gives a generic square root speedup. Consider a graph $G = (V, E)$ with some subset $M \subset V$ of the vertices denoted as \emph{marked}. We will compare classical and quantum walk algorithms for deciding whether any vertex in $G$ is marked.
+
+Classically, a straightforward aproach to this problem is to take a random walk defined by some stochastic matrix $P$, stopping if we encounter a marked vertex. In other words, we modify the original walk $P$ to give a walk $P'$ defined as:
+\begin{equation}
+    P'_{jk} = \begin{cases}
+        1 & k \in M \text{ and } j = k
+        \\ 0 & k \in M \text{ and } j \neq k
+        \\ P_{jk} & k \neq M
+    \end{cases}.
+\end{equation}
+
+Let us assume from now on that the original walk $P$ is symmetric, thought he modified walk $P'$ clearly is not provided $M$ is non-empty. If we order the vertices so that the marked ones come last, the matrix $P'$ has the block form:
+\begin{equation}
+    P' = \m{
+        P_M & 0 \\ Q & I
+    }
+\end{equation}
+where $P_M$ is obtained by deleting the rows and columns of $P$ corresponding to vertices in $M$. 
+
+Suppose we take $t$ steps of the walk. A simple calculation shows:
+\begin{equation}
+    (P')^t = \m{P^t_M & 0 \\ Q(I + P_M + \cdots + P_M^{t-1}) & I} = \m{P^t_M & 0 \\ Q\frac{P^t_M - I}{P_M - I} & I}.
+\end{equation}
+Now if we start from the uniform distribution over unmarked items (if we start from a marked item we are done, so we might as well condition on this not happening), then the probability of not reaching a marked item after $t$ steps is:
+\begin{equation}
+    \frac{1}{N-\abs{M}}\sum_{j, k \notin M}[P^t_M]_{jk} \leq \norm{P^t_M} = \norm{P_M}^t
+\end{equation}
+where the inequality follows because the left hand side is the expectation of $P^t_M$ in the normalized state $\ket{V \setminus M} = \frac{1}{\sqrt{N-\abs{M}}}\sum_{j \notin M}\ket{j}$. Now if $\norm{P_M} = 1 - \Delta$, then the probability of reaching a marked item after $t$ steps is at least $1 - \norm{P_M}^t = 1 - (1 - \Delta)^t$, which is $\Omega(1)$ provided $t = O(1/\Delta) = O(\frac{1}{1 - \norm{P_M}})$. 
+
+It turns out we can bound $\norm{P_M}$ away from 1  knowing only the fraction of marked vertices and the spectrum of the original walk. Thus we can upper bound the \emph{hitting time}, the time required to reach some marked vertex with constant probability.
+
+\begin{lembox}{: Bound on stochastic matrix norm}
+    If the second largest eigenvalue of $P$ (in absolute value) is at most $1 - \delta$ and $\abs{M} \geq \e N$, then $\norm{P_M} \leq 1 - \delta \e$. 
+\end{lembox}
+\begin{proof}
+    Let $\ket{v} \in \RR^{N-\abs{M}}$ be the principal eigenvector of $P_M$, and let $\ket{w} \in \RR^N$ be the vector obtained by padding $\ket{v}$ with 0s for the marked vertices.
+
+    We will decompose $\ket{w}$ in the eigenbasis of $P$. Since $P$ is symmetric, it is actually doubly stochastic, and the uniform vector $\ket{V} = \frac{1}{\sqrt{N}}\sum_j \ket{j}$ corresponds to the eigenvalue $1$. All other eigenvectors $\ket{\lambda}$ have eigenvalues $1 - \delta$ by assumption. Now:
+    \begin{align*}
+        \norm{P_M} &= \bra{v}P_M\ket{v} = \bra{w}P\ket{w} = \abs{\braket{V}{w}}^2 + \sum_{\lambda \neq 1}\lambda\abs{\braket{\lambda}{w}}^2 
+        \\ &\leq \abs{\braket{V}{w}}^2 + (1-\delta)\sum_{\lambda \neq 1}\abs{\braket{\lambda}{w}}^2 = 1 - \delta\sum_{\lambda \neq 1}\abs{\braket{\lambda}{w}}^2 = 1 - \delta(1 - \abs{\braket{V}{w}}^2)
+    \end{align*}
+    So applying Cauchy-Shwarz:
+    \begin{equation}
+        \abs{\braket{V}{w}}^2 = \abs{\bra{V}\Pi_{V \setminus M}\ket{w}}^2 \leq \norm{\Pi_{V \setminus M}\ket{V}}^2 \norm{\ket{w}}^2 = \frac{N - \abs{M}}{N} \leq 1 - \e
+    \end{equation}
+    where $\Pi_{V \setminus M} = \sum_{j \notin M}\dyad{j}{j}$. Thus, $\norm{P_M} \leq 1 - \delta \e$ as claimed.
+
+    Thus, we see the classical hitting time is $O(1/\delta\e)$.
+
+    Now we turn to the quantum case. Our strategy will be to perform phase estimation with sufficiently high precision on the operator $U$, the quantum walk corresponding to $P'$, with the state:
+    \begin{equation}
+        \ket{\psi} \coloneqq \frac{1}{\sqrt{N-\abs{M}}}\sum_{j \notin M}\ket{\psi_j}.
+    \end{equation}
+    This state can be easily prepared by first starting from the state:
+    \begin{equation}
+        T\ket{V} = \frac{1}{\sqrt{N}}\sum_j \ket{\psi_j}
+    \end{equation}
+    nd measuring whether the first register corresponds to a marked vertex. If it does, we're done, and if does not, we've prepared $\ket{\psi}$.
+
+    The matrix $D$ for the walk $P'$ is:
+    \begin{equation}
+        \m{P_M & 0 \\ 0 & I}
+    \end{equation}
+    so according to the spectral theorem, the eigenvalues of the resulting walk operator $U$ are $\pm 1$ and $\exp(\pm i \arccos \lambda)$, where $\lambda$ runs over eigenvalues of $P_M$. If the marked set $M$ is empty, then $P' = P$, and $\ket{\psi}$ is an eigenvector of $U$ with eigenvalue 1, so phase estimation with $U$ is guaranteed to return 0. But if $M$ is non-empty, then $\ket{\psi}$ lives entirely within the subspace with eigenvlues $\exp(\pm i \arccos \lambda)$. Thus if we perform phase estimation on $U$ with precision $O(\min_\lambda \arccos \lambda)$, we will see a phase different from 0. Since $\arccos \lambda \geq \sqrt{2(1-\lambda)}$, we see that precision $O(\sqrt{1-\norm{P_M}})$ suffices. So the quantum algorithm can decide whether there is a marked vertex in time $O(1/\sqrt{1-\norm{P_M}}) = O(1/\delta\e)$. 
+\end{proof}
+
+\subsection*{Quantum Phase Estimation}
+In the last portion of the proof of the quantum walk hitting time, we used the quantum phase estimation algorithm - let's discuss that now! It is an algorithm that unifies various aspects of quantum algorithms we have seen thus far. It is based on the QFT over $\ZZ_N$, where $N = 2^n$. 
+
+Imagien we are given unitary $U$, a black-box that allows us to apply a controlled $U^j$, and a eigenstate $\ket{\psi}$ with eigenvalue $\exp(2\pi i \phi)$ for $0 \leq \phi < 1$. We wish to determine $\phi$ to $n$ bits of precision.
+
+To this end, prepare an $n$-qubit register to $\ket{\psi}$ and apply $H$ to each qubit in the first register to get:
+\begin{equation}
+    \frac{1}{\sqrt{N}}\sum_{x=0}^{N-1}\ket{x}\ket{\psi}
+\end{equation}
+We then apply the unitary operator:
+\begin{equation}
+    U' = \sum_{x=0}^{N-1}\dyad{x}{x} \otimes U^x
+\end{equation}
+This operator can be thought of as performing the map where if the first register contains $x$, we can apply $U$ $x$ times to the second. By expressing $x$ in binary we can implement $U^{2^j}$ gates for different integers $j$, controlled on different qubits in the first register. After applying $U'$, we are left with the state:
+\begin{equation}
+    \frac{1}{\sqrt{N}}\sum_{x=0}^{N-1}e^{2\pi i \phi x}\ket{x}\ket{\psi}
+\end{equation}
+note that teh second register is left unchanged. Apply $Q^{-1}$ to first register and measure, getting outcome $y$. Output the binary fraction:
+\begin{equation}
+    0.y_1y_2\ldots y_n = \frac{y_1}{2} + \frac{y_2}{4} + \cdots + \frac{y_n}{2^n}
+\end{equation}
+as our guess for $\phi$.
+
+Why does this work? When we perform the last measurement, we measure $x$ with probability:
+\begin{equation}
+    \frac{1}{N^2}\abs{\sum_{y=0}^{N-1}e^{2\pi i \phi y - 2\pi i x y/N}}^2 = \frac{1}{N^2}\abs{\sum_{y=0}^{N-1}e^{2\pi i (\phi - x/N)}}^2
+\end{equation}
+First imagine that the binary expansion of $\phi$ is at most $n$ bits long, or in other words $\phi = z/N$ for some $0 \leq z \leq N - 1$. In this case we have:
+\begin{equation}
+    \frac{1}{N^2}\lvert \sum_{y=0}^{N-1}e^{2\pi i y(\phi - x/N)}\rvert^2 = \frac{1}{N^2}\lvert \sum_{y=0}^{N-1}e^{2\pi i y(z-x)/N}\rvert^2 = \delta_{xz}
+\end{equation}
+by the unitarity of the QFT, so the measurement outcome is guaranteed to be $z$, implying that the algorithm outputs $\phi$ with certainty. If the binary expansion of $\phi$ is longer than $n$ bits, we now show that we still get the best possible answer with probability $\Omega(1)$, and indeed are very likely to get an answer close to $\phi$. The proof turns out to be very similar to that of the correctness of the periodicity determination algorithm in the approximate case.
+
+\begin{thmbox}{: Correctness of QPE}
+   The probability that the above algorithm outputs the real niumber with $n$ binary digits which is closest to $\phi$ is at least $4/\pi^2$. Further, the probability that the algorithm outputs $\theta$ such that $\abs{\theta - \phi} \geq \e$ is at most $O(1/(N\e))$.  
+\end{thmbox}
+\begin{proof}
+    If the binary expansion of $\phi$ has $n$ binary digits are fewer, we are done by the argument above (it gives the exact answer). So assuming it does not, let $\tilde{\phi}$ be the closest approximation to $\phi$ that has $n$ binary digits, and write $\tilde{\phi} = a/N$ for some integer $0 \leq a \leq N-1$. For any $z$, define $\delta(z) \coloneqq \phi - z/N$ and note that $0 < \abs{\delta(a)} \leq 1/(2N)$. For any $\phi$, the probability of getting $z$ from the final measurement is:
+    \begin{equation}
+        Pr[z] = \frac{1}{N^2}\lvert \sum_{y=0}^{N-1}e^{2\pi i y(\phi - x/N)}\rvert^2 = \frac{1}{N^2}\lvert \sum_{y=0}^{N-1}e^{2\pi i y\delta(z)}\rvert^2 = \frac{1}{N^2}\lvert \frac{1 - e^{2\pi i N\delta(z)}}{1 - e^{2\pi i \delta(z)}}\rvert^2 = \frac{\sin^2(\pi N\delta(z))}{N^2\sin^2(\pi \delta(z))}
+    \end{equation}
+    where we evaluate the sum using the geometric series formula. This quantity should be familiar from the proof of correctness of the periodicity determination algorithm.
+
+    We first lower bound this expression for $z = a$ to prove the first part of the lemma. As $\abs{\delta(a)} \leq 1/(2N)$, we have $N\pi \delta(a) \leq \pi/2$. Then:
+    \begin{equation}
+        Pr[a] = \frac{\sin^2(\pi N\delta(a))}{N^2\sin^2(\pi \delta(a))} \geq \frac{(2N\delta(a))^2}{N^2\pi(\delta(a))^2} = \frac{4}{\pi^2}
+    \end{equation}
+    using trigonometric inequalities for sine.
+
+    In order to prove the secone part, we now find an upper bound on $Pr[z]$. First, it is clear that $\sin^2(\pi N\delta(z)) \leq 1$ always. For the denominator, by the same arguemtn above we have $\sin(\pi \delta(z)) \geq 2\delta(z)$ and hence for all z:
+    \begin{equation}
+        Pr[z] \leq \frac{1}{N^2}\left(\frac{1}{2\delta(z)}\right)^2 = \frac{1}{4N^2\delta(z)^2}
+    \end{equation}
+    we now sum this expression over all $z$ such that $\abs{\delta(z)} \geq \e$. The sum is symmetric about $\delta(z) = 0$, and as $z$ is an integer, the terms in this sum corresponding to $\delta(z) > 0$ are $\delta_0, \delta_0 + 1/N, \ldots$ for some $\delta_0 \geq \e$. The sum will be maximized when $\delta_0 = \e$, when we obtain:
+    \begin{equation}
+        Pr[z \text{ with } \abs{\delta(z)} \geq \e] \leq \frac{1}{4N^2}\sum_{k=0}^\infty \frac{1}{(\e + k/N)^2} \leq \frac{1}{4}\int_0^\infty \frac{1}{(N\e + k)^2}dk = \frac{1}{4}\int_{N\e}^\infty \frac{1}{k^2}dk = O(\frac{1}{N\e})
+    \end{equation}
+\end{proof}
+We observe the following properties regarding the behaviour of this algorithm:
+\begin{enumerate}
+    \item What happens if we do not know an eigenvector of $U$? If we input an arbitrary state $\ket{\varphi}$ to to the QPE algorithm, we can write it as $\sum_j \alpha_j \ket{\psi_j}$ over the eigenvectors $\set{\ket{\psi_j}}$. Therefore, the algorithm will output an estimate of each corresponding eigenvalue $\phi_j$ with probability $\abs{\alpha_j}^2$. This may or may not allow us to infer anything useful, depending on what we know about $U$ in advance.
+    \item In order to approximate $\phi$ to $n$ bits of precision, we needed to apply $U^{2m}$ for all $0 \leq m \leq n -1$. If we are given $U$ as a black box, this may be prohibitively expensive as we need to use the black box exponentially times in $n$. However, if we have an explicit circuit for $U$, then we may be able to find a more efficient way of computing $U^{2m}$, e.g. as is the case for modular exponentiation.
+\end{enumerate}
+\subsection*{Applications of QPE to Phase Estimation}
+An elegant application of QPE is to generalize unstructured (Grover) search. Imagine we have an oracle $f: \set{0, 1}^n \to \set{0, 1}$ which takes the value $1$ on $k$ inputs, for some unknown $k$, and again set $N = 2^n$. We would like to estimate $k$ by querying $f$.
+
+Classically, a natural way to do this is via sampling. Imagine that we query $f$ on $q$ random inputs and get that $f$ is 1 on $l$ of those inputs. Then as our estimate of $k$ we output $\tilde{k} = lN/q$. One can show using properties of the binomial distribution that this achieves:
+\begin{equation}
+    \abs{\tilde{k} - k} = O(\sqrt{\frac{k(N-k)}{q}})
+\end{equation}
+with high probability. We can achieve improved accuracy by using the QPE algorithm. Consider the ``Grover iteration'' $G = -H^{\otimes n}U_0 H^{\otimes n}U_f$. As $G$ is a rotation through angle $2\theta$ in a 2D plane, where $\sin\theta = \sqrt{k/N}$, its eigenvalues are $e^{2i\theta}$ and $e^{-2i\theta}$. In order to estimate $k$, we can apply the QPE to $G$ to estimate either one of these eigenvalues. As it doesn't matter which one we estimate, we can input any state within this 2D plane to the QPE as a claimed eigenvector of $G$. In particular, $\frac{1}{\sqrt{N}}\sum_{x \in \set{0, 1}^n}\ket{x}$ will work.
+
+By the previous theorem, if we apply QPE to $G$, we can find the closest $m$-difit number to $\theta$, for any $m$, with constant probability of sucess using $O(2^m)$ queries. For small $\theta$, $\theta \approx \sqrt{k/N}$, so we learn $\sqrt{k/N}$ up to additive error $O(1/2^m)$ with $O(2^m)$ queries. Setting $2^m = \sqrt{N}/\delta$ for some real $\delta > 0$, we have learned $\sqrt{k}$ up to additive error $O(\delta)$ using $O(\sqrt{N}/\delta)$ queries; or in other words have learnt $k$ up to additive error $O(\delta\sqrt{k})$ using $O(\sqrt{N}/\delta)$ queries. In order to achieve a similar level of accuracy classically, we would need $\Omega(N/\delta^2)$ queries for small $k$. Note that QPE can also be applied to the order finding problem.

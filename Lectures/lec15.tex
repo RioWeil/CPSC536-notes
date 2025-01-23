@@ -1,0 +1,58 @@
+\section{Dihedral HSP}
+We have thus shown that the Quantum query complexity of HSP is at most $O((\log\abs{G})^2)$. However, we use a sophisticated measurement in the Lemma, and in general has no efficient description in terms of quantum circuits (unlike a computational basis measurement). So now, we will think about the HSP for the Dihedral group $D_{2n}$, which we will see that the measurement has a nontrivial construction. The difficulty boils down to non-Abelian, non-normal subgroups.
+
+We recall $D_{2n} = \set{\sigma^a\tau^b \vert a \in \ZZ_n, b \in \ZZ_2}$. Where $\sigma$ are rotational symmetries and $\tau$ are reflection symmetries of the regular $n$-gon. For convenience, we wrote this as $D_{2n} = \set{(a, b) \vert a \in \ZZ_n, b \in \ZZ_2}$. As a concrete example, $D_{8} = \set{e, \sigma, \sigma^2, \sigma^3, \tau, \sigma\tau, \sigma^2\tau, \sigma^3\tau}$. Consider the subgroup:
+\begin{equation}
+    \mathcal{H} = \set{\avg{(a, 1)} \vert a \in \ZZ_n} 
+\end{equation}
+We focus on this particular set of subgroups due to its relevance in breaking lattice cryptography. The HSP only gets harder as we increase the size of $\mathcal{H}$.
+
+\begin{propbox}{}
+    $T_{\text{non-oracular}}(HSP(D_{2n}, \mathcal{H}, \Sigma)) = 2^{O(\sqrt{\log n})}$. 
+\end{propbox}
+Note: there are no complexity theoretic barriers to this (we don't solve $NP$ problems in polynomial time, for example). If we got this to $\text{poly}(\log n)$, then we would break a lot of lattice-based cryptographic protocols.
+
+\begin{proof}
+    Input is $x$ which hides the subgroup $\avg{(s, 1)}$.
+    \begin{enumerate}
+        \item Input $\frac{1}{\sqrt{2^n}}\sum_{a \in \ZZ_n, b \in \ZZ_2}\ket{a, b}\ket{x(a, b)}$
+        \item Measure the second register in the computational basis. Suppose we get $x_0 \in \Sigma$, then the state of the first register becomes:
+        \begin{equation}
+            \frac{1}{\sqrt{2}}\left(\ket{t_0', a_0} + \ket{t_0' + (-1)^{a_0}s, a_0 + 1}\right)
+        \end{equation}
+        where $x(t_0', a_0) = x_0$. This state can be alternatively written as:
+        \begin{equation}
+            \frac{1}{\sqrt{2}}(\ket{t_0, 0} + \ket{t_0 + s, 1})
+        \end{equation}
+        for some $t_0 \in \ZZ_n$. Now, we apply $QFT_n \otimes \II_2$ on this state. This gives:
+        \begin{equation}
+            \frac{1}{\sqrt{2}}\left(\frac{1}{\sqrt{n}}\sum_{y \in \ZZ_n}\omega^{t_0 y}\ket{y}\ket{0} + \frac{1}{\sqrt{n}}\sum_{y' \in \ZZ_n}\omega^{(t_0 + s)y'}\ket{y'}\ket{1}\right)
+        \end{equation} 
+        where $\omega = \exp(2\pi i/n)$. Now, by grouping the same $y$s together we have:
+        \begin{equation}
+            \frac{1}{\sqrt{2n}}\sum_{y \in \ZZ_n}\omega^{t_0 \cdot y}\left(\ket{0} + \omega^{s \cdot y}\ket{1}\right)\ket{y}
+        \end{equation}
+        Now measure the second register of the state in the computational basis.
+        \begin{enumerate}
+            \item Obtain a $y \in \ZZ_n$ uniformly at random
+            \item Post-measurement state $\frac{1}{\sqrt{2}}\left(\ket{0} + \omega^{s \cdot y}\ket{1}\right)$
+            \item Sketch of how to obtain $s$, from Kuperberg; Assume for simplicity that $n = 2^m$. $y \in \ZZ_n$ can be represented as an $n$-bit string. If $y = \ket{1 0\ldots 0 \to 2^{m-1} 1}$, then:
+            \begin{equation}
+                \frac{1}{\sqrt{2}}\left(\ket{0} + \exp(\frac{2\pi i}{m}2^{m-1}s)\ket{1}\right) = \frac{1}{\sqrt{2}}(\ket{0} + \exp(\pi i s)\ket{1}) = \frac{1}{\sqrt{2}}(\ket{0} + (-1)^{s_0}\ket{1})
+            \end{equation}
+            The idea is to press this button a few times, and d some clever post-processing. For a given $y, z$, we can combine the two:
+            \begin{equation}
+                \ket{\psi_y}\otimes\ket{\psi_z} = \frac{1}{\sqrt{2}}(\ket{0} + \omega^{y\cdot s}\ket{1})\otimes\frac{1}{\sqrt{2}}(\ket{0} + \omega^{z\cdot s}\ket{1})
+            \end{equation}
+            We then use a CNOT gate to entangle the two, which gives:
+            \begin{equation}
+                CNOT( \ket{\psi_y}\otimes\ket{\psi_z}) = \frac{1}{2}(\ket{00} + \omega^{zs}\ket{01} + \omega^{ys}\ket{10} + \omega^{(y + z)s}\ket{11})
+            \end{equation}
+            if we factor:
+            \begin{equation}
+                \frac{1}{2}\left((\ket{0} + \omega^{(y + z)s}\ket{1})\ket{0} + \omega^{zs}(\ket{0} + \omega^{(y + z)s}\ket{1})\ket{1}\right)
+            \end{equation}
+            we can then measure the second register in the computationa basis; we get $0$ with $p = 1/2$ and get $\ket{\psi_{y + z}}$. We get $1$ with $p = 1/2$ and get $\ket{\psi_{y - z}}$. The algorithm gives a sieving procedure. We want $y$ to be $1$ with a bunch of trailing zeros. This post-processing allows us to cancel out parts where $y, z$ are the same. This is more or less a classical ability at this point - we can create a $y$ with high probability. Note this is a superpolynomial speedup of $2^{\sqrt{\log n}}$. 
+        \end{enumerate}
+    \end{enumerate}
+\end{proof}

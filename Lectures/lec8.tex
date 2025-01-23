@@ -1,0 +1,113 @@
+\section{Simon's Problem continued}
+$D = D_0 \cup D_1 \subseteq \set{0, 1, \ldots, n-1}^n$ (disjoint union) where $n = 2^k$. $x \in D_0 \iff$ $x$ is a permutation of $\set{0, 1, \ldots, n-1}$ while $x \in D_1 \iff$ $\exists a \in \set{0, 1}^k \setminus \set{0^k}$ such that $x(t) = x(s) \iff t = s \oplus a$. We've identified $[n] = \set{0, 1}^k$. In the $k = 3$ case, we can identify $0, \ldots, 7$ by their binary representation, and then (example, which I missed \textcolor{red}{TODO})
+
+Let us return to the proof of the Lemma from last class.
+\begin{proof}
+    Let $A \in \mathbb{F}_2^{K \times k}$ defined by:
+    \begin{equation}
+        A = \m{-z_1- \\ -z_2- \\ \vdots \\ -z_K-}
+    \end{equation}
+    the dimension of the span of $z_1, \ldots z_k$ is (by definition) equal to the row-rank of $A$. But row-rank is equal to column rank. Then, by the rank-nullity theorem, column rank of $A = k$ implies that $\text{ker}(A) = \set{0^k}$ (where we recall that the kernel is defined as $\set{z \in \mathbb{F}_2^k \vert Az = 0}$). So the question reduces to ``what is the probability that the kernel of $A$ is trivial?'':
+    \begin{equation}
+        Pr[\text{ker}(A) = \set{0^k}] = Pr[\exists z \neq 0^k \vert Az = 0] \leq \sum_{z \in \mathbb{F}^k_2 \setminus \set{0^k}}Pr[Az = 0]
+    \end{equation}
+    where we have applied the union bound $Pr(\bigcup_i A_i) \leq \sum_i P(A_i)$. Now, WLOG suppose $z_k = 1$. Then, $Az = (z_1a_1 + z_2a_2 + \ldots) + z_ka_k$ where now in the brackets is just a uniformly random vector in $\mathbb{F}_2^k$, i.e.:
+    \begin{equation}
+        Pr[\text{ker}(A) = \set{0^k}] \leq (2^k - 1)\frac{1}{2^K} \leq \frac{2^k}{2^K}
+    \end{equation}
+    so $Pr[\text{ker}(A) = \set{0^k}] \geq 1 - 2^{k-K}$. 
+\end{proof}
+
+\begin{lembox}{}
+    Let $K \in \NN$ and $0 \neq a \in \mathbb{F}_2^k$. Let $z_1, \ldots, z_K \in \mathbb{F}_2^k$ be arbitrary such that $\forall i \in [K]$, $a \cdot z_i = 0$. Then, $\dim\text{span}_{\mathbb{F}_2}\set{z_1, \ldots, z_k} \leq k - 1$. 
+\end{lembox}
+
+\begin{propbox}{: Quantum query complexity of Simon's algorithm}
+    $Q(\text{Simon}_n) = O(\log n)$
+\end{propbox}
+\begin{proof}
+    Create the following state using 1 query to $x$:
+    \begin{equation}
+        \frac{1}{\sqrt{2^k}}\sum_{s \in \set{0, 1}^k}\ket{s}\ket{0} \mapsto^{O_x} \frac{1}{\sqrt{2^k}}\sum_{s \in \set{0, 1}^k}\ket{s}\ket{x(s)}
+    \end{equation}
+    where $\ket{x(s)} \in \CC^n$. Let us measure the second register in the computational basis.
+    
+    \emph{Case 1; $x \in D_0$:} Say the outcome is $i \in \set{0, \ldots, n-1}$, then the resulting state is by definition:
+    \begin{equation}
+        \II \otimes \dyad{i}{i}\left(\frac{1}{\sqrt{2^k}}\sum_{s \in \set{0, 1}^k}\ket{s}\ket{x(s)}\right) = \frac{1}{\sqrt{2^k}}\sum_{s \in \set{0, 1}^k}\ket{s}\ket{i}\delta_{i, x(s)} \propto \ket{x(s_0)}
+    \end{equation}
+    for some $s_0$ such that $x(s_0) = i$. 
+
+    \emph{Case 2; $x \in D_1$:} Say the outcome is $i \in \set{0, 1, \ldots, n-1}$. Then the resulting state (as before) is:
+    \begin{equation}
+        \frac{1}{\sqrt{2^k}}\sum_{s \in \set{0, 1}^k}\ket{s}\ket{i}\delta_{i, x(s)} \propto (\ket{s_0} + \ket{s_0 \oplus a})\ket{i}
+    \end{equation}
+    where $x(s_0) = i$. 
+    
+    Now apply $H^{\otimes k}$ to the first register.
+    
+    \emph{Case 1; $x \in D_0$:} we have $\ket{s_0}\ket{x(s_0)}$ and applying the Hadamard lemma from last class we get:
+    \begin{equation}
+        \frac{1}{\sqrt{2^k}}\sum_{y \in \set{0, 1}^k}(-1)^{s_0 \cdot y}\ket{y}\ket{x(s_0)}
+    \end{equation}
+
+    \emph{Case 2; $x \in D_1$:} we have $\frac{1}{\sqrt{2}}(\ket{s_0} + \ket{s_0 \oplus a})\ket{x(s_0)}$ so applying the Hadamard lemma we get:
+    \begin{align}
+        &\frac{1}{\sqrt{2}}\left(\frac{1}{\sqrt{2^k}}\left(\sum_y (-1)^{s_0 \cdot y}\ket{y} + \sum_y (-1)^{(s_0 + a) \cdot y}\ket{y}\right)\right)\ket{x(s_0)}
+        \\ &= \frac{1}{\sqrt{2^{k+1}}}\sum_y (-1)^{s_0 \cdot y}(1 + (-1)^{a \cdot y})\ket{y}
+    \end{align}
+
+    Now, measure the first register in the computational basis.
+
+    \emph{Case 1; $x \in D_0$:} Consider $\set{\dyad{z}{z} \vert z \in \set{0, 1}^k}$, which just picks out one term from the sum, so:
+    \begin{equation}
+        \norm{\dyad{z}{z} \frac{1}{\sqrt{2^k}}\sum_{y \in \set{0, 1}^k}(-1)^{s_0 \cdot y}\ket{y}}^2 = \frac{1}{2^k}
+    \end{equation}
+    where the post-measurement state is $z$.
+
+    \emph{Case 2; $x \in D_1$:} We have:
+    \begin{align}
+       &\norm{\dyad{z}{z}\frac{1}{\sqrt{2^{k+1}}}\sum_y (-1)^{s_0 \cdot y}(1 + (-1)^{a \cdot y})\ket{y}}^2
+       \\ &= \frac{1}{2^{k+1}}\norm{\sum_y (-1)^{s_0 \cdot y}(1 + (-1)^{a \cdot y})\delta_{yz}}^2
+       \\ &= \frac{1}{2^{k+1}}\norm{(1 + (-1)^{a \cdot z})}^2
+       \\ &= \begin{cases}
+        \frac{1}{2^{k+1}} \cdot 4 = \frac{1}{2^{k-1}} & z \cdot a = 0
+        \\ 0 & z \cdot a = 1
+       \end{cases}
+    \end{align}
+
+    The first Lemma we have the measurement outcome uniformly random in $z \in \mathbb{F}_2^k$. In the second lemma we have the measurement outcome is uniformly random $z \in \mathbb{F}_2^k$ such that $z \cdot a = 0$. 
+
+    We now repeat the process $K \in \NN$ times ($K$-query algorithm). We choose $K = k + 1000$. In the first case, we have the probability:
+    \begin{equation}
+        Pr[\dim\text{span}(z_1, \ldots, z_k) = k] \geq 1 - 2^{k-K} = 1 - 2^{-1000}
+    \end{equation}
+    In the second case the probability is zero, and we are done.
+\end{proof}
+
+Some remarks:
+\begin{enumerate}
+    \item A slight modification of the algorithm allows you to retrieve the $a$ in the case of $x \in D_1$, by using the equation $z \cdot a = 0$ and solving the linear system of $Aa = 0$. 
+    \item We consider the modification $\text{Simon}_n': D' \subseteq (\mathbb{F}_2^k)^{\mathbb{F}_2^k} \to \mathbb{F}_2^k$. In fact this generalizes widely to algebraic groups (which leads to Shor, as we will discuss next time). Where $x \in F'$ iff $\exists a \in \mathbb{F}_2^k \setminus \set{0^k}$ such that $\forall s, t \in \mathbb{F}_2^k$, $x(s) = x(t) \iff s = t$  and $\text{Simon}_n'(x) =$ the ``a'' associated with $x$. By the remark above, $Q(\text{Simon}_n') = O(k)$. 
+\end{enumerate}
+
+\begin{propbox}{: Randomized query complexity of Simon's problem}
+    $R(\text{Simon}_n) \geq \Omega(\sqrt{n})$.
+\end{propbox}
+
+\begin{lembox}{}
+    Suppose $f: D = D_0 \cup D_1 \subseteq \Gamma^n \to \set{0, 1}$ such that $f(D_0) = \set{0}$ and $f(D_1) = \set{1}$. Suppose $\mu_0$ is a (probability) distribution supported on $D_0$, and $\mu_1$ a distribution supported on $D_1$. Let $\mu$ denote the distribution:
+    \begin{enumerate}
+        \item $b \leftarrow \set{0, 1}$
+        \item $x \leftarrow \mu_b$. 
+    \end{enumerate}
+    Let $P \subseteq D_1$. Suppose that for all $b \in \set{0, 1}$:
+    \begin{equation}
+        Pr[T(x) = b \vert x \leftarrow \mu_0] = Pr[T(x) = b \vert x \in P, x \leftarrow \mu_1]
+    \end{equation}
+    then
+    \begin{equation}
+        Pr[T(x) = f(x) \vert x \leftarrow \mu] \leq \frac{1}{2} + \frac{1}{2}Pr[x \notin P \vert x \leftarrow \mu_1].
+    \end{equation}
+    Case to consider for intuition; if $P$ is the entirety of $D_1$, $T$ cannot distinguish between $\mu_0$ and $\mu_1$, so has a hard time computing $f$. 
+\end{lembox}

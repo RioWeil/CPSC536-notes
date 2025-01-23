@@ -1,0 +1,89 @@
+\section{Complexity continued}
+
+Correction: We defined a quantum circuit using acylic graphs and the Toffoli gate. But the Toffoli gate is asymmetric, so if the graph is acylic then we do not have data about the ordering. So the definition needs to be refined slightly.
+
+The motto that we wrote last time was that if in the Query model we try to compute $f: \set{0, 1}^n \to \set{0, 1}$ and the input to $f$ is an $n$-bit string, this relates to the time complexity if
+\begin{enumerate}
+    \item $x : [n] \to \set{0, 1}$ has an ``efficiently describable'' circuit.
+    \item The unitary operations for the quantum query algorithm have an ``efficiently describable'' quantum circuit.
+\end{enumerate}
+
+A query algorithm has a representation in terms of a circuit diagram of interleaving oracles $U_0$ and $O_x$. 
+
+As an example, we have the $k$-SAT problem - the problem of does there exist a choice of $u_1, \ldots u_n \set{0, 1}$ such that $y$ evaluated on the formula is equal to $1$. 
+
+On the classical side, it is known that $k$-SAT problem (where $l$ is the number of variables, $c$ is the number of clauses, $k$ is the number of terms per clause) has:
+\begin{enumerate}
+    \item For $k = 2$, the deterministic time is $\leq \text{poly}(l, c)$
+    \item For $k > 2$, the randomized time is $\leq 2^{l(1-1/k)}\text{poly}(l, c)$. 
+\end{enumerate}
+
+Although there is no proof (as proving lower bounds in the Turing model is hard), there is a conjecture known as the \emph{(Classical) Strong exponential time hypothesis}. For every $\e > 0$, there exists $k \in \NN$ such that no $O(2^{(1-\e)l}\text{poly}(l, c))$ randomized algorithm can solve $k$-SAT. This has been a long-standing conjecture in classical complexity theory. This is violated in the quantum setting due to Grover search.
+
+We described the query version of Grover search, but we should describe it in terms of bona fide quantum gates. Consider our input formula $y$. We have $x: \set{0, 1}^l \to \set{0, 1}$ (where $x \in \set{0, 1}^{2^l}$) where $x(u_1, \ldots, u_l)$ is whatever $y$ evaluates to on $u_1, \ldots, u_l$. 
+
+Important fact: Given the description of a classical circuit for $x$ of size $s$, it outputs the classical description of a quantum circuit for $O_x$ in time $O(s)$. Left as an exercise to prove. It remains to see how we efficiently construct the unitaries, but that will be a homework exercise. 
+
+Collision problem: $\text{Collision}_n: D_0 \cup D_1 \subseteq \set{0, 1, \ldots, n-1}^n \to \set{0, 1}$ where:
+\begin{equation}
+    D_0 = \set{x \in \set{0, 1, \ldots, n-1}^n \vert \forall i, j \in [n], i \neq j \implies x_i \neq x_j}
+\end{equation}
+\begin{equation}
+    D_1 = \set{x \in \set{0, 1, \ldots, n-1}^n \vert \forall i \in [n] \exists ! j \in [n], j \neq i \text{ s. t. } x_i = x_j}
+\end{equation}
+Where $D_0$ are $n$-digit strings with no repeats ($x$ is 1-1), and $D_1$ are $n$-digit strings where each character is repeated once ($x$ is 2-1). The definition of collision is $\text{Collision}_n(D_0) = \set{0}$ and $\text{Collision}_n(D_1) = \set{1}$. 
+
+\begin{propbox}{: Randomized complexity of Collision$_n$}
+    $R(\text{Collision}_n) = O(\sqrt{n})$.
+\end{propbox}
+\begin{proof}
+    Follows by a birthday paradox argument. Choose a random size-$k$ subset of $[n]$ uniformly at random. Output $1$ iff you see a collision. 
+    
+    \text{Case 1.} $x \in D_1$. Then, we can pair up the $x_i$ and $x_j$. There are $\binom{n}{k}$ size $k$ subsets. What is the probability of a bad situation? In general, let's think about the number of $k$-size subsets that don't contain a collision. For the first point, we randomly choose a single point, so there is no chance of a collision, so we have $n$ possible choices. For the second point we have $n-1$ choices left of which $n-2$ cause no collision. For the third we have $n-4$ viable choices, and so on until:
+    \begin{equation}
+        \frac{n(n-2)(n-4)\ldots(n-2(k-1))}{k!}
+    \end{equation}
+    where we divide out by $k!$ to remove the redundancy from the ordering of the subsets. So the probability of not seeing a collision is going to be:
+    \begin{equation}
+        \frac{n(n-2)(n-4)\ldots(n-2(k-1))/k!}{n(n-1)(n-2)\ldots (n-k+1)/k!} = 1\left(1 - \frac{1}{n-1}\right)\left(1 - \frac{2}{n-2}\right) \ldots \left(1 - \frac{k}{n-k}\right)
+    \end{equation}
+    we can upper bound $1 - x \leq e^{-x}$ so:
+    \begin{equation}
+        Pr[\text{Failure}] \leq 1 \cdot e^{-\frac{1}{n-1}}e^{-\frac{2}{n-2}} = e^{-\sum_{i=1}^{k-1}\frac{i}{n-i}}
+    \end{equation}
+    Let's say $k \leq \frac{n}{2}$. Then, $n-i \geq \frac{n}{2}$ so:
+    \begin{equation}
+        \sum_{i=1}^{k-1}\frac{i}{n-i} \geq \frac{\sum_{i=1}^{k-1}i}{n} = \frac{k(k-1)}{2n} \geq \frac{(k-1)^2}{2n}
+    \end{equation}
+    So then:
+    \begin{equation}
+        Pr[\text{Failure}] \leq e^{-\frac{(k-1)^2}{2n}} \leq \e = \frac{1}{3}
+    \end{equation}
+    so it suffices to choose $k = O(\sqrt{n}\log(1/\e))$. 
+\end{proof}
+
+\begin{propbox}{: Quantum complexity of Collision$_n$}
+    $Q(\text{Collision}_n) = O(n^{1/3})$.
+\end{propbox}
+\begin{proof}
+    We input $x_1, \ldots x_k$. First, we classically query $x_1, \ldots, x_k$.
+
+    \begin{enumerate}
+        \item If we query the above and we already find a collision, then we are done.
+        \item If no collisions, then quantumly Grover search for the $k$ distinct symbols among $x_{k+1}, \ldots, x_n$. For how many of these symbols will we get a hit for what we queried? Among the remaining symbols, there will be exactly $k$ that match with the already queried symbols. On the $n-k$ symbols, we are not just trying to compute the $OR$ function, but rather $OR$ with a promise that there are no hits, or that there are $k$ hits with th remaining symbols, i.e. $OR^{0, k}_{n-k}(\tilde{x}_{k+1}, \ldots, \tilde{x}_n)$, which has complexity $O(\sqrt{n/k})$. The overall query complexity is $k + O(\sqrt{n/k})$ which is minimized at $k = \sqrt{n/k}$ so $k = n^{1/3}$ wherein the overall complexity is $O(k^{1/3})$.
+    \end{enumerate}
+
+\end{proof}
+There is an extra step in pre-processing the $x_{k+1}, \ldots x_n$. For query complexity, this extra step of converting into bit strings cost only 2 oracle calls, $O(1)$. But there is also the function we need to apply that uses what we already queried. This doesn't use any queries, but may create some time issue complexities. There are more examples attached to this be relevant time-complexity wise; we need to assume something called QRAM which is outside the Turing model. But this is very controversial.
+
+In the remaining 15 minutes, Daocheng will give an open question: Directed st-connectivity in hypercube problem.  See Ambainis et al, SODA '18.
+
+When $n = 3$, the hypercube graph looks like a cube with each with vertex a 3-bit string, and each edge has a bitstring $x_k$ which indicates whether the edge exists or not in the hypercube. Does there exist a directed path from $s$ to $t$ that goes through edges that are available? (in the direction of increasing Hamming weight)?
+
+Each vertex in the hypercube has $n$ edges corresponding to the $n$ bit flips. There are $2^n$ vertices, but avoiding the double counting we have a total of $n2^{n-1}$ edges. So the maximal query complexity is $n2^{n-1}$ (because if we query all the edges, we know there to be a directed path for sure). The question is can we do better.
+
+Things that don't work:
+\begin{enumerate}
+    \item Look at all the directed paths from $0^n$ and $1^n$ and Grover search over them. But, there are $n^n$ directed paths, so Grover gives $\sqrt{n^n} = n^{n/2}$ which is much larger than the trivial upper bound.
+    \item Look at the ``column'' in the middle which are bit strings with Hamming weight $n/2$. Look at a specific vertex $x$ on that column, and look at the subcube between $0^n$ and $x$, i.e $\set{y \in \set{0, 1}^n \vert y \leq x}$. The number of edges in the subcube is $\sim 2^{n/2}$. In the subcube, we can naively query all of them to decide if $0^n$ is connected to $x$, taking $O(2^{n/2})$ queries. Can we then take all $x$ in the middle, of which there are $2^n/\sqrt{n}$. If we Grover search over all of them, we have $\sqrt{2^n/\sqrt{n}}2^{n/2} = 2^{n}/n^{1/4}$. But the actual algorithm in the paper gives the upper bound $2^{0.8n}$... the best known lower bound is $\sqrt{2^n}$. 
+\end{enumerate}

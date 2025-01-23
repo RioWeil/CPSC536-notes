@@ -1,0 +1,166 @@
+\section{Hamiltonian Simulation}
+What is a useful task we can do with a quantum computer? Shor is a strict negative for humanity, and even if it works we just move to quantum-safe encryption techniques.
+
+One useful goal would be to simulate physical systems. An $n$-qubit system is specified by $2^n$ complex numbers/amplitudes, so any classical algorithm would generically have $O(2^n)$ space complexity. But on an $n$-qubit quantum system, we would expect we only need an $n$-qubit universal quantum computer - and this turns out to be indeed the case, with quantum systems able to be simulated in $\text{poly}(n)$ time.
+
+Hamiltonian $H$ (hermitian) encodes the dynamics of the quantum system, with $\bra{\psi}H\ket{\psi}$ denoting the average energy. The time evolution is given by the SE:
+\begin{equation}
+    \dod{}{t}\ket{\psi(t)} = -iH\ket{\psi(t)}
+\end{equation}
+with solution $\ket{\psi(t)} = \exp(-iHt)\ket{\psi(0)}$. $\exp(-iHt$) is the matrix exponential defined by:
+\begin{equation}
+    \exp(A) = \sum_{j=0}^\infty \frac{A^j}{j!}
+\end{equation}
+so, given $H, t$ we want to simulate $U(t) = \exp(-iHt)$ to a suitable degree of approximation. To this end we review/introduce some useful definitions:
+
+\begin{defbox}{: Operator norm}
+    The \emph{operator norm} of operator $A$ is:
+    \begin{equation}
+        \norm{A} = \max_{\ket{\psi}}\norm{A\ket{\psi}}
+    \end{equation}
+    with the max taken over normalized $\ket{\psi}$. If $A$ is diagonalizable, then $\norm{A}$ is the maximum eigenvalue of $A$.
+\end{defbox}
+
+\begin{propbox}{: Operator norm inequalities}
+    \begin{equation}
+        \norm{A + B} \leq \norm{A} + \norm{B}
+    \end{equation}
+    \begin{equation}
+        \norm{AB} \leq \norm{A}\norm{B}
+    \end{equation}
+\end{propbox}
+
+We will work with $k$-local Hamiltonians - for this fixed $k$, we expect $\text{poly}(n)$ scaling (but not as we increase it).
+
+\begin{defbox}{: $k$-local Hamiltonians}
+    A Hamiltonian $H$ is $k$-local on $n$ qubits if:
+    \begin{equation}
+        H = \sum_{j=1}^m H_j,
+    \end{equation}
+    where $H_j$ acts on at most $k$ qubits, i.e $H_j = \tilde{H}_j \otimes I$ where $\tilde{H}_j$ acts on some $k$ qubits and $I$ the others as identity.
+\end{defbox}
+The number of $m$ terms we need in the above definition is bounded by:
+\begin{equation}
+    m \leq \binom{n}{k} = O(n^k).
+\end{equation}
+
+Some examples:
+\begin{enumerate}
+    \item $H = X\otimes I \otimes I - Z \otimes I \otimes Y$ is 2-local on 3 qubits.
+    \item $H = J\sum_{i, j=1}^{n-1}Z_{(i, j)}Z_{(i, j+1)} + Z_{(i, j)}Z_{(i+1, j)}$ is the Ising model on an $n \times n$ lattice of qubits. It is 2-local on $n^2$ qubits.
+    \item $H = \sum_{i=1}^{n-1}J_xX_{i}X_{i+1} + J_yY_iY_{i+1} + J_zZ_{i}Z_{i+1}$ is the Heisenberg model on a $n$ qubit line. It is 2-local on $n$ bits.
+\end{enumerate}
+Why is the idea of $k$-locality useful? The idea is we can simulate each $\exp(iH_j t)$ separately and combine. However, unless the $\set{H_j}$ are mutually commuting, then in general:
+\begin{equation}
+    \exp(-i\sum_j H_j t) \neq \prod_j \exp(-iH_j t)
+\end{equation}
+so we need to somehow solve this problem. Putting it aside for now, we can start with the quantum simulation problem. We make use of the following, technical, theorem (which proof is given, e.g., in Nielsen and Chuang):
+\begin{thmbox}{: Solovay-Kitaev}
+    Let $U$ be a unitary be a unitary operator on $k$ qubits and $S$ any universal set of quantum gates. Then $U$ can be approximated to within $\e$ using $O(\log^c\frac{1}{\e})$ from $S$, with $c < 4$.
+\end{thmbox}
+Thus, we can simulate each $\exp(-iH_j t)$ with modest overhead in circuit side for improved error, assuming we fix $k$.
+
+We also need to keep track of the accumulation of errors. To this end, the following Lemma is useful:
+\begin{lembox}{: Error Accumulation}
+    Let $\set{U_i}, \set{V_i}$ be sets of unitary opeartors with:
+    \begin{equation}
+        \norm{U_i - V_i} \leq \e
+    \end{equation}
+    then:
+    \begin{equation}
+        \norm{U_m\ldots U_1 - V_m \ldots V_1} \leq m\e.
+    \end{equation}
+\end{lembox}
+\begin{proof}
+    (Sketch) Unitary gates preserve the size of vectors, and hence do not blow up errors - they simply accumulate linearly.
+\end{proof}
+
+Warm-up; easy case with mutually commuting terms.
+
+\begin{propbox}{: Commuting Hamiltonian Case}
+    Let:
+    \begin{equation}
+        H = \sum_{j=1}^m H_j
+    \end{equation}
+    be any $k$-local Hamiltonian with commuting terms.
+
+    Then for any $t, \exp(-iHt)$ can be approximated to within $\e$ by a circuit of:
+    \begin{equation}
+        O\left(m\text{poly}\left(\log(\frac{m}{\e})\right)\right)
+    \end{equation}
+    gates from any universal gate set.
+\end{propbox}
+\begin{proof}
+    Pick $\e' = \e/m$ and approximate $\exp(-iH_jt)$ to within $\e'$. Then the total error is bounded by $m\e' = \e$, and this uses:
+    \begin{equation}
+        O\left(m\text{poly}\left(\log(\frac{m}{\e})\right)\right)
+    \end{equation}
+    gates.
+\end{proof}
+Full-commutative case; for this, note the piece of notation that $X + O(\e)$ means $X + E$ with $\norm{E} = O(\e)$. 
+
+\begin{lembox}{: Lie-Trotter Product Formula}
+    Let $A, B$ matrices with $\norm{A}, \norm{B} \leq K < 1$. Then:
+    \begin{equation}
+        \exp(-iA)\exp(-iB) = \exp(-i(A+B)) + O(K^2).
+    \end{equation}
+\end{lembox}
+\begin{proof}
+    \begin{equation}
+        \exp(-iA) = I - iA + \sum_{k=2}^{\infty}\frac{(iA)^k}{k!} = I - iA + (iA)^2\sum_{k=0}\frac{(-iA)^k}{(k+2)!}
+    \end{equation}
+    noticing that $\norm{(iA)^2} \leq K^2$, and the final sum has norm bounded by $e^K < e$, so:
+    \begin{equation}\label{eq-expia}
+        \exp(-iA) = I - iA + O(K^2).
+    \end{equation}
+    Then we have:
+    \begin{equation}
+        \exp(-iA)\exp(-iB) = \exp(-i(A+B)) + O(K^2)
+    \end{equation}
+    where we use Eq. \eqref{eq-expia} twice and then need that $\norm{A + B} \leq 2K = O(K)$ and $\norm{AB} \leq K^2 = O(K^2)$.
+\end{proof}
+
+We now apply this repeatedly to accumulate sums $H_1, H_2, \ldots, H_m$ in the exponent. First of all, we note that if each $\norm{H_i} < K$, then $\norm{H_i + \ldots + H_l} < lK$. We want this to be $< 1$ for all $l \leq m$. So for now, we assume $K < \frac{1}{m}$. Also, take $t = 1$ for now. Then:
+\begin{equation}
+    \prod_{j}\exp(-iH_j) = \exp(-i\sum_j H_j) + O(m^3K^2)
+\end{equation}
+where we repeatedly multiply and then use that $\sum_{n=1}^m n^2 = O(m^3)$. We write teh error as $Cm^3K^2$. 
+
+This is ok for small $K$, but it won't be in general. For general $K$ and $t$ values, we introduce a large $N$ such that:
+\begin{equation}
+    \norm{\frac{H_jt}{N}} < \frac{Kt}{N} \leq \norm{K} < 1.
+\end{equation}
+Imn other words, we divide time up into small $t/N$ intervals.
+\begin{equation}
+    U = \exp(-i\sum_j H_j t) = (\exp(-i\sum_j \frac{H_j t}{N}))^N
+\end{equation}
+which holds because $\sum_j \frac{H_j t}{N}$ commutes with itself.
+
+We now want to make sure the final error for $U$ is $< \e$. So, we know each term $\exp(-i\sum_j \frac{H_j t}{N})$ needs to be approximated to $\e/N$. So, using our previous formula, we want:
+\begin{equation}
+    Cm^3\tilde{K}^2 < \frac{\e}{N},
+\end{equation}
+Doing some algebraic manipulation, we find that we need:
+\begin{equation}
+    N > \frac{Cm^3K^2t^2}{\e}
+\end{equation}
+We now have $Nm$ gates of the form $\exp(iH_jt/N)$, so the circuit size is at most:
+\begin{equation}
+    O(\frac{m^4(Kt)^2}{\e}).
+\end{equation}
+Recall for $n$ qubits, a general $k$-local Hamiltonian has $m = O(n^k)$. So the circuit size is:
+\begin{equation}
+    \norm{C} = O(\frac{n^{4k}(Kt)^2}{\e}).
+\end{equation}
+Now this is in terms of the number of $\exp(iH_jt/N)$ gates. If we want to express this in terms of universal gates, then each needs to be approximated to $O(\e/\abs{C})$. We then need $O(\log^c(\frac{\abs{C}}{\e}))$ gates for each, for some $c < e$. So we only get an extra modest multiplicative factor in $\abs{C}$. Note tht for fixed $n$ but variable $t$, the quantum process runs in $t$ but our simulation needs $O(t^2)$, which can be improved to $O(t^{1+\delta})$ for any $\delta > 0$ by using ``better'' Lie-Trotter expansions.
+
+\subsection*{Local Hamiltonian Problem}
+There are many other things we might want to do with a $k$-local Hamiltonian. One question we might be interested in is the eigenvalues of $H$. Suppose we are given a 5-local Hamiltonian:
+\begin{equation}
+    H = \sum_{j=1}^m H_j
+\end{equation}
+on $n$ qubits. We suppose $\norm{H_i} < 1$, and we are given two numbers $a < b$, such as $a = \frac{1}{3}$ and $b = \frac{2}{3}$. We are promised that the smallest eigenvalue $E_0$ of $H$ is $< a$ or $> b$. The problem is to decide to whether $E_0 < a$. 
+
+The reason why we have these funny $a, b$ is so that we don't have to worry about precision. If we only had a single $a$ and want to determine if $E_0 > a$ or $E_0 < a$, it would be difficult if $E_0 \approx a$. 
+
+Kitaev's theorem says that the above problem is complete for a complexity class known as QMA, i.e. it is the ``hardest'' QMA problem. In other words, any problem in QMA (the quantum version of NP) can be translated into a local Hamiltonian problem. 

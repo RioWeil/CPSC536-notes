@@ -1,0 +1,127 @@
+\section{The Hidden Subgroup Problem Continued}
+
+\begin{defbox}{: Mixed quantum state}
+    Let $d \in \NN$. A mixed quantum state of dimension $d$ is a matrix $\rho \in \CC^{d \times d}$ such that:
+    \begin{enumerate}
+        \item $H$ is positive semidefinite
+        \item $\Tr(\rho) = 1$.
+    \end{enumerate}
+    E.g. $\rho = \sum_i p_i \dyad{\psi_i}{\psi_i}$ where $\ket{\psi_i}$ are pure states. $\Tr(\rho) = \sum_i p_i = 1$ and $\sum_i p_i \abs{\braket{\psi_i}{\psi_i}}^2 \geq 0$. 
+\end{defbox}
+
+\begin{defbox}{: Effect of measurement on mixed quantum state}
+    Let $d \in \NN$, $\rho$ be a mixed quantum state and $\mathcal{M} = \set{\Pi_i \vert i \in \Gamma}$ a measurement on $\CC^d$. To measure $\rho$ with $\mathcal{M}$ refers to a process that:
+    \begin{enumerate}
+        \item Outputs $i \in \Gamma$ wit probability $\Tr(\Pi_i \rho)$
+        \item The resulting state becomes $\frac{\Pi_i \rho\Pi_i}{\Tr(\Pi_i \rho)}$. 
+    \end{enumerate}
+\end{defbox}
+
+\begin{defbox}{: Schatten $p$-norm}
+    Let $p \in [1, \infty)$ and $d \in \NN$. The Schatten $p$-norm of a matrix $A \in \CC^{d \times d}$ is defined to be:
+    \begin{equation}
+        \norm{A}_p \coloneqq \Tr((A^\dag A)^{p/2})^{1/p}
+    \end{equation}
+    (Recall the definition of functions of matrices, where if $A = \sum_i \lambda_i \dyad{i}{i}$ then $f(A) = \sum_i f(\lambda_i)\dyad{i}{i}$.) Also, when $p = \infty$, $\norm{A}_\infty$ is the spectral norm of $A$. 
+\end{defbox}
+
+\begin{defbox}{: Fidelity of quantum states}
+    Let $\rho, \sigma \in \CC^{d \times d}$ be mixed quantum states. The fidelity between $\rho, \sigma$ is defined as:
+    \begin{equation}
+        F(\rho, \sigma) \coloneqq \norm{\sqrt{\rho}\sqrt{\sigma}}_1
+    \end{equation}
+    We observe that $F(\rho, \sigma) = F(\sigma, \rho)$ (symmetric) and $0 \leq F(\rho, \sigma) \leq 1$.
+\end{defbox}
+
+\begin{lembox}{: Pretty good measurement}
+    Let $N,d \in \NN$. Let $\rho_1, \rho_2, \ldots, \rho_N \in \CC^{d \times d}$ be mixed quantum states. Then there exists an $[N]-$outcome measurement $\mathcal{M} = \set{\Pi_i \vert i \in [N]}$ on $\CC^d \otimes \CC^N$ such that:
+    \begin{equation}
+        \Tr(\Pi_i  (\rho_i \otimes \dyad{0}{0})) \geq 1 - N\sqrt{\max_{i \neq j}F(\rho_i, \rho_j)}
+    \end{equation}
+\end{lembox}
+
+\begin{lembox}{: Holder's inequality for Schatten $p$-norms}
+    Let $p \in [1, \infty]$, $d \in \NN$, $A, B \in \CC^{d \times d}$. Then:
+    \begin{equation}
+        \norm{AB}_1 \leq \norm{A}_p\norm{B}_{p^*}
+    \end{equation}
+    where $\frac{1}{p} + \frac{1}{p^*} = 1$.
+\end{lembox}
+\begin{proof}
+    Combine Von Neumann's Tracing inequality with the usual Holder's inequality for $L^p$ norms.
+\end{proof}
+\begin{lembox}{}
+    Let $\rho, \sigma$ be mixed quantum states and $\Pi_\rho$ be the projector onto the support of $\rho$. Then:
+    \begin{equation}
+        F(\rho, \sigma) \leq \sqrt{\Tr(\Pi_\rho \sigma)}
+    \end{equation}
+\end{lembox}
+\begin{proof}
+    \begin{align*}
+        F(\rho, \sigma) &= \norm{\sqrt{\rho}\sqrt{\sigma}}_1
+        \\ &= \norm{\Pi_\rho \sqrt{\rho} \Pi_\rho\sqrt{\sigma}}_1
+        \\ &\leq \norm{\Pi_\rho \sqrt{\rho}}_2 \norm{\Pi_\rho\sqrt{\sigma}}_2
+        \\ &= \sqrt{\Tr((\Pi_\rho\sqrt{\rho})^\dag (\Pi_\rho\sqrt{\rho}))} \sqrt{\Tr((\Pi_\rho\sqrt{\sigma})^\dag (\Pi_\rho\sqrt{\sigma}))}
+        \\ &= \sqrt{\Tr(\sqrt{\rho}\Pi_\rho \Pi_\rho \sqrt{\rho})}\sqrt{\Tr(\sqrt{\sigma}\Pi_\rho \Pi_\rho \sqrt{\sigma})}
+        \\ &= \sqrt{\Tr(\rho)}\sqrt{\Tr(\Pi_\rho \sigma)}
+    \end{align*}
+\end{proof}
+\begin{lembox}{}
+    Let $G$ be a finite group, $H, H' \leq G$. Then:
+    \begin{equation}
+        \abs{gH \cap g'H'} = \begin{cases}
+            \abs{H \cap H'} & \text{if } g^{-1}g' \in HH' = \set{hh' \vert h \in H, h' \in H'}
+            \\ 0 & \text{otherwise}
+        \end{cases}
+    \end{equation}
+    Moreover, $\abs{HH'} = \frac{\abs{H}\abs{H'}}{\abs{H\cap H'}}$.
+\end{lembox}
+\begin{lembox}{}
+    Let $G$ be a finite group. Let $N$ be the number of subgroups of $G$. Then, $N \leq (\abs{G} + 1)^{\log_2\abs{G}}$. 
+\end{lembox}
+\begin{proof}
+    Consider a subgroup $H \leq G$. $H$ can be specified by $\leq \log_2\abs{H}$ independent generators. Start with $\avg{e}$, then $\avg{e, h_2} = \set{e, h_2, h_2^2, \ldots}$, then continue on and define $h_{i+1}$ recursively by an element that can't be generated as a word of the previous elements. So, the number of subgroups is at most $\sum_{i=0}^{\log_2\abs{G}}\binom{\abs{G}}{i} \leq (\abs{G} + 1)^{\log_2\abs{G}}$
+\end{proof}
+
+We are now ready to prove the quantum query complexity of HSP proposition from last lecture.
+\begin{proof}
+    \begin{enumerate}
+        \item Create $\frac{1}{\sqrt{\abs{G}}}\sum_{g \in G}\ket{g}\ket{x(g)}$. (1 query)
+        \item Measure the second register in the computational basis.
+        \item Consider the mixed state:
+        \begin{equation}
+            \rho = \frac{1}{\abs{G}/\abs{H}}\sum_{i=1}^k \dyad{g_iH}{g_iH} \text{ where } \ket{g_iH} = \frac{1}{\sqrt{\abs{H}}}\sum_{g \in g_iH}\ket{g}
+        \end{equation}
+        Suppose we do this $l \in \NN$ times. Then, $\rho_H^{\otimes l}$. And we consider:
+        \begin{equation}
+            \rho_{H_1}^{\otimes l}, \ldots \rho_{H_N}^{\otimes l}
+        \end{equation}
+        with $N = O(\log_2\abs{G})$. Use pretty good measurement lemma to find:
+        \begin{equation}
+            \Tr(\Pi_i (\rho_i \otimes \dyad{0}{0})) \geq 1 - N\sqrt{\max_{i \neq j}F(\rho_i, \rho_j)} \geq \frac{2}{3}
+        \end{equation}
+        so then:
+        \begin{equation}
+            1 - N\sqrt{\max_{i \neq j}F(\rho^{\otimes l}_{H_i}, \rho^{\otimes l}_{H_j})} \geq \frac{2}{3} \iff l \geq \Omega(\frac{\log_2N}{\log(\max_{i \neq j}\frac{1}{F(\rho_{H_i}, \rho_{H_j})})})
+        \end{equation}
+    \end{enumerate}
+    It now suffices to show:
+    \begin{equation}
+        F(\rho_{H_i}, \rho_{H_j}) \leq \text{ Constant}
+    \end{equation}
+    \textcolor{red}{(Note: This last part takes place one lecture later)} To this end we use the Lemma, and we can instead bound $\Tr(\Pi_{\rho_H}\rho_H')$.
+    \begin{align*}
+        \Tr(\Pi_{\rho_H}\rho_H') &= \Tr(\frac{1}{\abs{H}}\sum_g \in G\dyad{gH}{gH} \cdot \frac{1}{\abs{G}}\sum_{g' \in G}\dyad{g'H}{g'H})
+        \\ &= \frac{1}{\abs{H}\abs{G}}\sum_{g, g' \in G}\Tr(\dyad{gH}{gH}\dyad{g'H}{g'H})
+        \\ &= \abs{\frac{1}{\sqrt{H}}\sum_{h \in H}\bra{gh}\frac{1}{\sqrt{H'}}\sum_{h' \in H}\ket{g'h'}}^2
+        \\ &= \frac{1}{\abs{H}\abs{H'}}\abs{\sum_{h \in H, h' \in H'}\braket{gh}{g'h'}}^2
+        \\ &= \frac{1}{\abs{H}^2\abs{H'}\abs{G}}\sum_{g, g' \in G}\abs{gH\cap g'H'}^2
+    \end{align*}
+
+    The sum is equal to $\abs{H \cap H'}^2$ if $g^{-1}g' \in HH'$ and $0$ otherwise, so:
+    \begin{align*}
+        \Tr(\Pi_{\rho_H}\rho_H') &= \frac{1}{\abs{H}^2\abs{H'}\abs{G}}\abs{G}\abs{Hh'} 
+        \\ &= \frac{\abs{H\cap H'}}{\abs{H}}
+    \end{align*}
+    Now we want to bound this by a half. The fidelity is symmetric and we also have that it is less than $\frac{\abs{H \cap H'}}{\abs{H'}}$, from which we obtain that it must be less than a half (by using Lagrange's Theorem). The claim follows.
+\end{proof}

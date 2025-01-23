@@ -1,0 +1,73 @@
+\section{Analysis of the hypercube and Simon's problem}
+
+\subsection*{The hypercube problem continued}
+The hypercube problem continued.  To review, if  we consider the $n!$ paths ($n$ choices of which bit to flip in the first step, then $n-1$, and so on) from $0^n$ to $1^n$, and then consider $OR(\tilde{p}_1 \ldots \tilde{p}_{n!})$ where $\tilde{p}_i = 1$ if the path is present and 0 otherwise. If we do a Grover search over all directed paths, then we have $O(\sqrt{n!}n) \sim O(n^{n/2})$ complexity (via the Sterling approximation) which is worse than the trivial upper bound. Better method:
+
+\begin{enumerate}
+    \item We now consider if we go from $0^n$ to $1^n$ (and arrange a pictoral diagram going from left to right in order of increasing Hamming weight), we can classically all edges in the shaded areas i.e. from $0$ up to a certain Hamming weight $\alpha n$, and then from Hamming weight $n - \alpha n$ line to $1^n$. The lines are the sets of points $\set{z \in \set{0, 1}^n \vert \abs{z} = \alpha n}$.  Then we can classically query all edges in the shaded areas, which takes $2\sum_{k=0}^{\alpha n}\binom{n}{k} \cdot \frac{n}{2}$ queries.
+    \item Now if we try to decide whether $z^{(1)}$ is connected to $z^{(2)}$ via a directed path. We then have a sub-hypercube $\set{z \in \set{0, 1}^n \vert z^{(1)} \leq z \leq z^{(2)}}$. The dimension of this hypercube is $n/2 - \alpha n$. So the number of edges inside of it is $(n/2 - \alpha/n)2^{n/2-\alpha n}/2$. So by investing $O(2^{n/2-\alpha n})$ (hiding the polynomial in the $*$) his number of (classical) queries we can decide if $z^{(1)}$ is connected to $z^{(2)}$
+    \item Now we ask how $z^{(2)}$ could possibly connected to $0^n$. We want to OR over the points on the $\abs{z} = \alpha n$ line, so we Grover search over $\sqrt{\binom{n}{\alpha n}}O^*(2^{n/2-\alpha n})$ possibilities.
+    \item So then in total we have $\sqrt{\binom{n}{n/2}}\sqrt{\binom{n}{\alpha n}}O^*(2^{n/2-\alpha n})$ so the overall cost is:
+    \begin{equation}
+        O^*(\sum_{k=0}^{\alpha n}\binom{n}{k} + \sqrt{\binom{n}{n/2}}\sqrt{\binom{n}{\alpha n}}2^{n/2-\alpha n})
+    \end{equation}
+    then we choose $\alpha$ optimally. For this we use a Lemma:
+
+    \begin{lembox}{: Binomial Coefficient Bounds}
+        Let $n \in \NN$. Then:
+        \begin{equation}
+            \begin{cases}
+                \forall k \in \NN, 1 \leq k \leq \frac{n}{2}, \binom{n}{\leq k} \coloneqq \sum_{i=0}^k \binom{n}{i} \leq 2^{h(k/n)n}
+                \\ \forall l \in \NN, 1 \leq l \leq n, \binom{n}{l} \leq 2^{h(l/n)n}
+            \end{cases}
+        \end{equation}
+        where $h:[0, 1] \to [0, 1]$ is the binary entropy defined by:
+        \begin{equation}
+            h(p) \coloneqq -p\log_2(p) - (1-p)\log_2(1-p)
+        \end{equation}
+    \end{lembox}
+    upper bounding using the Lemma:
+    \begin{align}
+        \sum_{k=0}^{\alpha n}\binom{n}{k} + \sqrt{\binom{n}{n/2}}\sqrt{\binom{n}{\alpha n}}2^{n/2-\alpha n} &\leq 2^{nh(\alpha n/n)} + \sqrt{2^{nh(1/2)}}\sqrt{2^{nh(2\alpha)}} 2^{n/2-\alpha n}
+        \\ &= 2^{n\ln(\alpha)} + 2^{n(1 + \frac{1}{2}h(2\alpha) - \alpha)}
+    \end{align}
+    so we optimize by setting the exponents to being the same. We can do this using our favourite software device to find $\alpha = 0.397$. This implies the quantum query complexity is $2^{nh(0.397)} = 2^{0.969n}$. Mo
+
+    Can we push this to extremes with more layers/recusive averaging? Currently we have $O^*(2^{0.8615n}$. The best known quantum lower bound is $\Omega^*(2^{0.5n})$ and there has been a 5 year open question to close the gap. Another question si whether we can remove the assumption of QRAM. 
+
+\end{enumerate}
+
+
+\subsection*{Simon's problem}
+Consider $\text{Simon}_n : D \coloneqq D_0 \cup D_1 \subseteq \set{0, 1, \ldots, n-1}^n \to \set{0, 1}$. The setting is similar to the collision problem. Here the disjoint sets $D_0, D_1$ are defined as:
+\begin{equation}
+    D_0 \coloneqq \set{x \in \set{0, 1, \ldots, n-1}^n \vert \forall s \neq t, x(s) \neq x(t)}
+\end{equation}
+\begin{equation}
+     D_1 \coloneqq \set{x: \set{0, 1}^k \to \set{0,1, \ldots, n-1} \vert \exists a \in \set{0, 1}^k - \set{0^k} \forall s, t \in \set{0, 1}^k, x(s) = x(t) \iff s = t \oplus a}
+\end{equation}
+where $\text{Simon}_n(D_0) = \set{0}$ and $\text{Simon}_n(D_1) = \set{1}$. 
+
+\begin{propbox}{: Quantum/randomized complexities of Simon's problem}
+    $Q(\text{Simon}_n) = O(\log n)$ and $R(\text{Simon}_n) = \Omega(\set{n})$.
+\end{propbox}
+
+\begin{lembox}{: Hadamard identity}
+    Let $x \in \set{0, 1}^k$ and the corresponding state $\ket{x} = \ket{x_1}\ket{x_2} \ldots \ket{x_k} \in \CC^{2^k}$. let $H^{\otimes k}$ be the Hadamard tensored with itself $k$ times where $H = \frac{1}{\sqrt{2}}\m{1 & 1 \\ 1 & -1}$. Then:
+    \begin{equation}
+        H\ket{x} = \frac{1}{\sqrt{2^k}}\sum_{y \in \set{0, 1}^k}(-1)^{x \cdot y} \ket{y}
+    \end{equation}
+\end{lembox}
+\begin{proof}
+    Left to the reader - we already did $k = 1$ when proving the phase kickback trick.
+\end{proof}
+
+\begin{lembox}{}
+    Let $k, K \in \NN$. Suppose $z_1, z_2, \ldots, z_K \leftarrow \mathbb{F}^k_2$ (where $\mathbb{F}_2$ is the field of two elements, i.e $\set{0, 1}$ with XOR addition). Then, the probability that the dimension of the span of the $z_i$s, i.e. the dimension of:
+    \begin{equation}
+        V \coloneqq \set{a_1 z_1 + \ldots + a_Kz_K \vert \forall i a_i \in \mathbb{F}_2} \subseteq \mathbb{F}_2^k
+    \end{equation} 
+    is $k$ at least $1 - 2^{k-K}$. 
+\end{lembox}
+
+Sanity check: when $K \leq k$, $1 - 2^{k-K}$ is non-positive and the bound yields no information. Special case; if $K = K + 1$ then the probability is at least $1/2$

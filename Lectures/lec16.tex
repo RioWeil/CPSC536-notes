@@ -1,0 +1,94 @@
+\section{Time Complexity of DHSP, Intro to Element Distinctness Problem}
+\subsection*{Time Complexity of DHSP}
+We consider the Dihedral group $D_{2n}$ and a hidden subgroup $\set{(0, 0), (s, 1)}$ where $s$ is the secret. We take $n = 2^m$ and consider $\ket{\psi_k} = \frac{1}{\sqrt{2}}(\ket{0} + \omega^{ks}\ket{1})$ where $\omega=\exp(2\pi i/n)$. It is good if $k = 000000\ldots 0 \to 2^{m-1} = n/2 \in \ZZ_k$. I.e. the first part of $k$ is all zero. So, then $s = s_{m-1}S_{m-2}s_{m-3}\ldots s_0 = 2^{m-1}s_{m-1} + \ldots + s_0 \in \ZZ_n$. Then $\ket{\psi_k}$ becomes:
+\begin{equation}
+    \ket{\psi_k} = \frac{1}{\sqrt{2}}\left(\ket{0} + \exp(\frac{2\pi i}{n}\frac{n}{2}s)\ket{1}\right) = \frac{1}{\sqrt{2}}\left(\ket{0} + \exp(\pi i s_0)\ket{1}\right)
+\end{equation}
+why is it good? Because we can perform a hadamard gate to get $\ket{s_0}$, the secret we are trying to find.
+
+Last time, given two states $\ket{\psi_p}, \ket{\psi_q}$ we discussed a procedure that outputs $0, \ket{\psi_{p-q}}$ and $1, \ket{\psi_{p+q}}$ with probability 1/2 each - the \emph{Kuperburg sieve}. Let's review it and see how long it takes.
+
+\begin{propbox}{: Time Complexity of Kuperberg sieve}
+    The Kuperberg sieve has time complexity $2^{O(\sqrt{log n})}$.
+\end{propbox}
+
+\begin{proof}
+Let us review the algorithm.
+\begin{enumerate}
+    \item Start off with $2^l$ states of the form $\ket{\psi_p}$. Preparing these states costs unit time.
+    \item For $k = 0, 1, \ldots, \frac{m}{a} - 1$. Note $l, a$ are to be optimized for later. Pair the states that agree on the next $a$ least significant bits, and do the combination operation hoping for the $-$ case (i.e. $\ket{\psi_{p-q}}$ rather than $\ket{\psi_{p+q}}$).
+    \item End up with a uniform mixture of $\ket{\psi_0}$ and $\ket{\psi_{n/2}}$
+\end{enumerate}
+Analysis: At each stage, how many states do we expect to lose? we expect to retain $1/8$ of the states at each stage provided the number of states at the start of the stage is $\geq 2\cdot 2^{a}$. Why $1/8$? 3 factors of a half:
+\begin{enumerate}[(a)]
+    \item The combining operation takes in two states and outputs one.
+    \item The combining operation succeeds with probability 1/2.
+    \item There are $2^a$ possible bit string sets we study (we want the next $a$ least significant bits to agree). In each set, we can have at most one state that we cannot combine. So, if we have $2 \cdot 2^a$ states at the beginning of the stage, the maximum possible fraction of states that cannot be paired is 1/2.
+\end{enumerate}
+So we start with $l$ states, and at each stage we lose $1/8 = 1/2^{3}$ states, so at the last stage $j = \frac{m}{a} - 1$, we have $\frac{2^l}{2^{3(m/a-1)}}$ states and we require this to be $\geq 2 \cdot 2^a$ for the procedure to succeed. So then:
+\begin{equation}
+    2^{l - 3(\frac{m}{a}-1)} \geq 2^{a+1} \implies l - 3\frac{m}{a} + 3 \geq a + 1 \implies l \geq 3\frac{m}{a} + a - 2
+\end{equation}
+Minimizing, we have $a = \sqrt{m}$ so $l = O(\sqrt{m})$ and so with $2^l$ states and $n = 2^m$ the time complexity is $2^{O(\sqrt{\log n})}$. 
+\end{proof}
+Thus concludes the proof. If we are able to come up with an algorithm that is $\text{poly}(\log n)$ then you would be the next Peter Shor, because this would break the current ``post-quantum'' crypto systems.
+
+\subsection*{Another approach}
+Another possible approach. Consider $k \leftarrow \ZZ_n$ with $\ket{\psi_k} = \frac{1}{\sqrt{2}}(\ket{0} + \omega^{ks}\ket{1})$. Consider measuring $\ket{\psi_k}$ using the following measurement; the Hadamard basis measurement $\mathcal{M} = \set{\dyad{+}{+}, \dyad{-}{-}}$ where $\ket{\pm} = \frac{\ket{0} \pm \ket{1}}{\sqrt{2}}$. The probability of getting $+$ is:
+\begin{equation}
+    p(+) = \norm{\dyad{+}{+}\frac{1}{\sqrt{2}}(\ket{0} + \omega^{ks}\ket{1})}^2 = \abs{\frac{1}{2}(1 + \exp(\frac{2\pi i ks}{n}))}^2 = \cos^2(\frac{\pi k s}{m})
+\end{equation}
+
+So - we have a random variable $K$ chosen randomly from $\ZZ_n$ and $B \in \set{+, -}$. What is then $Pr[K = k \vert B = +]$? By Bayes' rule, we have:
+\begin{equation}\label{eq-prk}
+    Pr[K = k \vert B = +] = \frac{Pr[B = +\vert K = k]Pr[K = k]}{Pr[B = +]} = \frac{\cos^2(\frac{\pi k s}{m})\frac{1}{n}}{\frac{1}{n}\sum_l\cos^2(\frac{\pi l s}{n}) } = \begin{cases}
+        \frac{1}{n} & \text{if $s = 0$}
+        \\ \frac{2}{n}\cos^2(\frac{\pi k s}{n}) & \text{if $s \neq 0$}
+    \end{cases}
+\end{equation}
+Probability of getting $+$ is $\frac{1}{2}$. We've reduced the problem to the following.
+\begin{itemize}
+    \item We have unknown $s \in \ZZ_n$.
+    \item Have ability to press a button at unit time cost to generate a sample $k \in \ZZ_n$ with probability given in Eq. \eqref{eq-prk}. Either a constant or a cosine wave (which oscillates faster with increasing $s$). These distributions are sufficiently far apart that with only logarithmic presses to discriminate the two distributions. However, a time-efficient algorithm to do this is not known (research question to the classical algorithms students in the crowd). If you use MLE, this requires $\log n$ presses of the button but is not $\text{poly}(\log n)$ to run.
+\end{itemize}
+
+This concludes our discussion of HSP, though we note that it is still an open research area. DHSP has motivation to break lattice cryptography. For the symmetric group, HSP is relevant as it connects to solving the graph isomorphism problem. There is also HSP over $\RR$, which has relevance to solving number-theoretic equations.
+
+\subsection*{Element distinctness Problem}
+We are back in polynomial speedup land!
+
+\begin{defbox}{: Element Distinctness Problem and Amplitude Amplification}
+    Consider $n \in \NN$, and the function
+\begin{equation}
+    \fullfunction{f}{[n]^n}{\set{0, 1}}{x}{\begin{cases} 1 & \text{if $x$ contains duplicates} \\ 0 & \text{if $x$ does not contain duplicates}\end{cases}}
+\end{equation}
+which defines $ED_n$.
+\end{defbox}
+
+Example: Let $n = 5$. Then if $x = 12453$ then $f(x) = 0$ and if $x = 11453$ then $f(x) = 1$. 
+
+As a quick remark, $R(ED_n) = \Omega(n)$, which is obtained via the lower bound for $OR_n$. What is the quantum query complexity of this? 
+
+\begin{propbox}{: Quantum query complexity of $ED_n$}
+    $Q(ED_n) = O(n^{2/3})$.
+\end{propbox}
+There is also a weaker result of $Q(ED_n) = O(n^{3/4})$. To get this we use the widely used technique of amplitude amplification - which morally is glorified Grover search.
+
+\begin{propbox}{: Amplitude Amplification}
+    Let $d \in \NN$ and $\theta \in [0, \pi/2]$. Let $\ket{\psi_0}, \ket{\psi_1}$ be $d$-dimensional quantum states such that $\ket{\psi} = \cos\theta\ket{0}\ket{\psi_0} + \sin\theta\ket{1}\ket{\psi_1}$. Let $G = \II_{2d} - 2\dyad{\psi}{\psi}$ and $U = \II_{2d} - 2\dyad{1}{1} \otimes \II_d$. Then for all $k \in \NN$, we find:
+    \begin{equation}
+        (GU)^k\ket{\psi} = (-1)^k\left(\cos((2k+1)\theta)\ket{0}\ket{\psi_0} + \sin((2k+1)\theta)\ket{1}\ket{\psi_1}\right)
+    \end{equation}
+\end{propbox}
+\begin{proof}
+    Same as the steps leading to the lecture 3 result (with generalized $\theta$).
+\end{proof}
+Morally we have a procedure that succeeds if we measure $\ket{1}$, for which we can amplitude can be amplified to succeed with a constant probability (and quantum does better at classical at such an amplification) - $\frac{1}{\sqrt{p}}$ as opposed to $\frac{1}{p}$ in the randomized case.
+
+In particular, writing $\sin(\theta) = \sqrt{p}$ the probability of measuring $\ket{\psi}$ (the initial state) in the computational basis on the first register is $p$ (think of it as small). If we take $k$ to be:
+\begin{equation}
+    \frac{\pi}{4\theta} - \frac{1}{2} \in [\frac{\pi}{4\theta} - 1, \frac{\pi}{4\theta}]; \quad k \leq \frac{\pi}{4}\frac{1}{\arcsin(\sqrt{p})} \leq \frac{\pi}{4}\frac{1}{\sqrt{p}}
+\end{equation}
+to obtain $\sin((2k+1)\theta) \in [\sin(\frac{\pi}{2}-\theta),1] = [\sqrt{1-p}, 1]$ (the probability of success/measuring 1 is $\sin^2((2k+1)\theta)$, which for small $p$ is a constant). 
+
+Typical application: Have a unitary $A$ such that $A\ket{0} = \ket{\psi}$ so $G = A(1 - 2\dyad{0}{0})A^\dag$. So, $(GU)^k$ uses $k$ applications of $A$ and $A^{-1} = A^\dag$ (with same/similar costs) If $A$ succeeds with probability $p$ then $O(\frac{1}{\sqrt{p}})$ applications of $A$ and $A^\dag$ boosts success to a constant.

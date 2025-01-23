@@ -1,0 +1,97 @@
+\section{Quantum Signal Processing}
+
+QSP is a powerful, unifying framework. Given an operator represented via a block encoding, we can encode spectral information via qubitization and then transform via QSP to implement a function of it. Applying this to the Hamiltonian Simulation problem, and using amplitude amplification, we can simulate sparse $H$s with optimal complexity tradeoff. These techniques can also be applied in a wide variety of other algorithms.
+
+\subsection*{Block Encoding}
+We say a unitary $U$ is a block encoding of $A$ if:
+\begin{equation}
+    U = \m{A & \cdot \\ \cdot & \cdot} = \dyad{0}{0} \otimes A + \ldots = \left(\bra{0} \otimes I\right)U\left(\ket{0} \otimes I\right)
+\end{equation}
+Note that for $A$ to have a blcok encoding, $\norm{A} \leq 1$, but we can consider them under rescaling - i.e. $A/\alpha$ with $\alpha \geq \norm{A}$ can be block encoded. $\alpha$ measures the quality of the encoding (with $\alpha$ small corresponding to a better encoding).
+
+Obviously an efficient quantum circuit block-encodes itself, but we can give efficient block encodings of many other kinds of matrices - of particular interest is sparse matrices. Suppose $A \in \CC^{N \times N}$ is $d$-sparse and efficiently row and column computable. Furthermore suppose $\max_{i, j}\abs{A_{i,j}} \leq 1$. Then we can efficiently implement unitaries $R, C$ acting on $\CC^{3 \times N \times N}$ as:
+\begin{equation}
+    R: \ket{0}\ket{0}\ket{i} \mapsto \ket{0}\frac{1}{\sqrt{d}}\sum_{k=1}^N\sqrt{A^*_{ik}}\ket{i}\ket{k} + \ket{1}\ket{i}\ket{\mu_j}
+\end{equation}
+\begin{equation}
+    R: \ket{0}\ket{0}\ket{j} \mapsto \ket{0}\frac{1}{\sqrt{d}}\sum_{k=1}^N\sqrt{A_{lj}}\ket{l}\ket{j} + \ket{1}\ket{j}\ket{\nu_j}
+\end{equation}
+For some states $\ket{\mu_i}, \ket{\nu_j}$. This can be done via quantum walk implementations. Then, $R^\dag C$ is a block encoding of $A/d$. 
+
+Block encodings have nice closure properties, e.g. $A, B$ block encodings can be used to efficiently construct a block encoding of $AB$.
+
+\subsection*{QSP}
+A key problem is tranforming a block encoding of one matrix into a related one. In particular, given a block encoding of $A$, when we can produce a block encoding of $f(A)$, and at what cost? This is addressed by quantum signal processing.
+
+We describe Low/Yoder/Chuang's result for $2 \times 2$ matrices, which generalizes to higher dimensions.
+
+Suppose we are given:
+\begin{equation}
+    W(x) \coloneqq \m{x & i\sqrt{1-x^2} \\ i\sqrt{1-x^2} & x} = \exp(i\arccos(x)\sigma_x)
+\end{equation}
+Our goal is to generate a matrix whose entries are polynomial in $x$. We do this by interspersing $W(x)$ with $z$-rotations, giving circuit:
+\begin{equation}
+    W_\Phi(x) \coloneqq \exp(i\phi_0 \sigma_z)W(x)\exp(i\phi_1\sigma_z)W(x)\ldots W(x)\exp(i\phi_k\sigma_z)
+\end{equation}
+where $\Phi \coloneqq (\phi_0, \phi_1, \ldots, \phi_k)$. the functions $W(x)$ that can be realized this way are captured by the following Lemma:
+
+\begin{lembox}{: QSP}
+    There exists $\Phi \in \RR^{k+1}$ such that:
+    \begin{equation}\label{eq-Wphi}
+        W_{\Phi}(x) = \m{P(x) & iQ(x)\sqrt{1-x^2} \\ iQ^*(x)\sqrt{1-x^2} & P^*(x)}
+    \end{equation}
+    iff $P, Q \in \CC[x]$ satify:
+    \begin{enumerate}
+        \item $\deg(P) \leq k$ and $\deg(Q) \leq k-1$.
+        \item $P$ has parity $k \mod 2$ and $Q$ has parity $k - 1 \mod 2$
+        \item $\forall x \in [-1, 1]$, $\abs{P(x)}^2 + (1-x^2)\abs{Q(x)}^2 = 1$. 
+    \end{enumerate}
+\end{lembox}
+\begin{proof}
+    We first show by induction on $k$ that Eq. \eqref{eq-Wphi} implies three conditions:
+
+    For the induction step, we find that:
+    \begin{equation}
+        W_{(\phi_0, \ldots \phi_{k+1})} = \m{P(x) & iQ(x)\sqrt{1-x^2} \\ iQ^*(x)\sqrt{1-x^2} & P^*(x)}W(x)e^{i\phi_k\sigma_z} =  \m{\tilde{P}(x) & i\tilde{Q}(x)\sqrt{1-x^2} \\ i\tilde{Q}^*(x)\sqrt{1-x^2} & \tilde{P}^*(x)}
+    \end{equation}
+    With:
+    \begin{equation}
+        \tilde{P}(x) = e^{i\phi_k}\left(xP(x) - (1-x^2)Q(x)\right)
+    \end{equation}
+    \begin{equation}
+        \tilde{Q}(x) = e^{-i\phi_k}\left(P(x) + xQ(x)\right)
+    \end{equation}
+    clearly satify the three conditions.
+
+    For the converse, we show by induction that the three conditions suffice to construct the decomposition.
+
+    For $k=0$, $\deg(P) = 0$, so the third condition implies that $P(x) = \exp(i\phi_0)$ for some $\phi_0 \in \RR$ and $Q(x) = 0$. Proof details can be filled in via the AMC notes.
+\end{proof}
+
+When lifting this decomposition to higher-dimensional cases via qubitizations, we will use a variant of QSP with reflections.
+
+\subsection*{Qubitization}
+Qubitization lets us map a high-dimensional block encoding to a single qubit, to which we can apply QSP. This mapping relies on a decomposition of the block encoding into two-dimensional subspaces. This allows us to perform QSP in superposition on the high-dimensional target space.
+
+\subsection*{Applications to Hamiltonian Simulation}
+QSP yields an optimal algorithm for simulation of sparse Hamiltonians.
+
+As described in the block encoding section, we can construct an efficient block encoding of sparse $H$ (scaled down by sparsity times largest magnitude of a matrix element). Our goal is to turn this into a block encoding of the evolution operator $\exp(-iHt)$. 
+
+To do this, we use the Jacobi-Anger expansion:
+\begin{equation}
+    \exp(it\cos\theta) = \sum_{k=-\infty}^\infty i^kJ_k(t)\exp(ik\theta) = J_0(t) + 2\sum_{k=1}^\infty i^k J_k(t)T_k(\cos\theta)
+\end{equation}
+Where $J_k$ is a Bessel function and $T_k(\theta) = \cos(k\theta)$ is a Chebyshev polynomial. By truncating this expression to the first $K$ terms, we get a degree-$K$ polynomial in $x$:
+\begin{equation}
+    J_0(-t) + 2\sum_{k=1}^K i^k J_k(t)T_k(\cos\theta) \approx \exp(-itx)
+\end{equation}
+Using this polynomial as $f$ in the QSP Lemma, we get a good approximation of $\exp(-iHt)/2$. 
+
+To understand the quality of the approximation, we must bound the error incurred by truncating of the infinite series. We omit the details here as it is technial, but it turns out to be $O((t/2)^K/K!)$. To make this $O(\e)$, we take:
+\begin{equation}
+    K = \left(t + \frac{\ln(1/\e)}{\ln(e + \ln(1/\e)/t)}\right)
+\end{equation}
+and this expression is tight.
+
+Since this is scaled by a factor of 2, we need to scale it back up to achieve the desired deterministic simulation. We can use this via robust oblivious amplitude amplification with only constant-factor overhead. Overall, this gives a quantum algorithm for sparse Hamiltonian simulation with optimal dependence on both $t$ and $\e$. 

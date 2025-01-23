@@ -1,0 +1,134 @@
+\section{Basic Design Principles for Quantum Algorithms}
+We have now shown that $R(OR_n^{0, 1}) \geq n/3$ but $Q(OR_n^{0, 1}) \leq \frac{\pi}{4}\sqrt{n} + \frac{1}{2}$ - our first rigorous proof of a (quadratic) quantum speedup in terms of $n$ within the query model.
+
+In this lecture, we explore two very useful principles of quantum algorithm design given as two items in Fact \ref{fact-qrandquery} below. We apply these principles to show how the quantum query complexity of $OR_n$ (without any domain restrictions on domain) is also $O(\sqrt{n})$. In later lectures, we will take these principles for granted.
+
+\begin{factbox}{: Quantum query algorithms to simulate randomized query algorithms}\label{fact-qrandquery}
+    Quantum (query) algorithms can efficiently simulate randomized (query) algorithms. In particular, $Q(f) \leq R(f)$ for any $f$. See Section 2.3.3 of de \href{https://homepages.cwi.nl/~rdewolf/publ/qc/phd.pdf}{Wolf's PhD Thesis} for details.
+\end{factbox}
+
+\begin{proof}
+    (Sketch) We will see how a quantum query algorithm can simulate a DDT first by way of an example: consider
+    the obvious depth-2 DDT $T$ that computes $(\lnot x_1 \land x_2) \lor (x_1 \land \lnot x_3)$ with $1$ labelling the root. For this example, use the following fact:
+
+\begin{factbox}{: Permutation unitary}
+    Suppose $g: \set{0, 1, \ldots, a-1} \to \set{0, 1, \ldots, b-1}$, then there exists a unitary $U_g$ (in fact a permutation matrix) acting on the space $\CC^a \otimes \CC^b = \CC^{ab}(U_g \in \CC^{ab \times ab})$ such that:
+    \begin{equation}
+        U_g\ket{i}\ket{0} = \ket{i}\ket{g(i)}
+    \end{equation}
+    for all $i \in \set{0, 1, \ldots, a-1}$.
+\end{factbox}
+
+Armed with this, we proceed as follows; let $I: \set{0, 1} \to \set{2, 3}$ be defined by $I(0) = 2$ and $I(1) = 3$. $I$ maps the bit value of $x_1$ to the index that is queried next. Let $I-1$ denote the function that first applies $I$ and then subtracts $1$. Let $h: \set{0, 1} \times \set{0, 1, 2} \times \set{0, 1} \to \set{0, 1}$ by:
+\begin{equation}
+    h(0, 2-1, 0) = 0, h(0, 2-1, 1) = 1 h(1, 3-1, 0) = 1, h(1, 3-1, 1) = 0.
+\end{equation}
+We have defined $h$ such that $h(a, I-1, b)$ is defined to be the value that $T$ outputs if $x_1 = a$, $I$ is the index of the variable queried next, and $x_I = b$.
+
+Our register has dimensions $\CC^3 \otimes \CC^2 \otimes \CC^3 \otimes \CC^2 \otimes \CC^2$. Where in $\ket{0}\ket{0}\ket{0}\ket{0}\ket{0}$ the first two are query registers and the last three are workspace registers.
+
+\begin{align*}
+    &\ket{0}\ket{0}\ket{0}\ket{0}\ket{0}
+    \\ &\mapsto^{O_x} \ket{0}\ket{x_1}\ket{0}\ket{0}\ket{0}
+    \\ &\mapsto^{U_{I-1}} \ket{0}\ket{x_1}\ket{I(x_1) - 1}\ket{0}\ket{0}
+    \\ &\mapsto^{O_x} \ket{0}\ket{x_1}\ket{I(x_1) - 1}\ket{x_{I(x_1)}}\ket{0}
+    \\ &\mapsto^{U_h} \ket{0}\ket{x_1}\ket{I(x_1) - 1}\ket{x_{I(x_1)}\ket{h(x_1, I(x_1) - 1m x_{I(x_1)})}}
+    \\ &= \ket{0}\ket{x_1}\ket{I(x_1) - 1}\ket{x_{I(x_1)}}\ket{T(x)}
+\end{align*}
+Where $\mapsto^A$ denotes the application of $A$ (tensored appropriately with identities) and the last line uses the definition of $h$. Then, measuring using $\set{\Pi_0 \coloneqq \II_{36} \otimes \dyad{0}{0}, \Pi_1 \coloneqq \II_{36} \otimes \dyad{1}{1}}$ gives outcome $T(x)$ with probability $1$. This concludes the example for DDTs.
+
+What about $RDT$s? Recall an RDT is a distribution $\set{(p_i, T_i)}_{i=0}^{K-1}$ over $DDT$s. We have seen how $T_i$ can be simulated by a quantum query algorithm $\mathcal{A}_i$ for each $i$. Suppose $\mathcal{A}_i$ is specified by unitaries $\set{U_j^i}_{j=0, \ldots, d}$. Then the RDT can be simulated by a quantum query algorithm $\mathcal{A}$ that starts with the state:
+\begin{equation}
+    \ket{\psi_0} \coloneqq \sum_{i=0}^{K-1}U_0^i \ket{0} \otimes \sqrt{p_i}\ket{i}.
+\end{equation}
+(More precisely, we can define the $U_0$ of $\mathcal{A}$ such that $U_0\ket{0} = \ket{\psi_0}$). Then for $j \in \set{1, \ldots, d}$, $U_j$ of $\mathcal{A}$ is defined to be:
+\begin{equation}
+    U_j \coloneqq \sum_{i=0}^{K-1}U_j^1 \otimes \dyad{i}{i}.
+\end{equation}
+
+The measurement of $\mathcal{A}$ is still $\set{\Pi_0 \coloneqq \dyad{0}{0}, \Pi_1 \coloneqq \dyad{1}{1}}$ (appropriately tensored with identities) so the $\Pi$s only act non-trivially on the $T_i(x)$ register.
+\end{proof}
+
+In our definition of quantum query complexity, there is one measurement coming at the end. But in fact, could have also allowed ``intermediate measurements''. The principle of deferred measurement says that such measurements can always be simulated by a measurement at the end.
+\begin{factbox}{: Principle of Deferred Measurement}
+    Suppose we make a measurement $\mathcal{M} \coloneqq \set{\Pi_1, \ldots, \Pi_k}$ on a state $\ket{\psi}$ and if the measurement outcome is $i \in [k]$, we apply unitary $U_i$ to another state $\ket{\psi'}$ (Comment: In Simon's problem, we need $\ket{\psi'}$ to be the post-measurement state of $\ket{\psi}$, but the proof is the same.) Then the effect of this procedure is that with probability $\norm{\Pi_i \ket{\psi}}^2$, we end up with the final state $U_i\ket{\psi'}$.
+
+    Now, consider the following simulation; we apply the unitary:
+    \begin{equation}
+        U \coloneqq \sum_{i=1}^n \Pi_i \otimes U_i
+    \end{equation}
+    to the state $\ket{\psi}\ket{\psi'}$ and then measure the first register using $\mathcal{M}$. (Note that it is unitary by virtue of the orthogonality and completeness of the projectors, and the unitary of $U$).
+
+    Then, the probability of observing outcome $i \in [k]$ is:
+    \begin{equation}
+        \norm{(\Pi_i \otimes \II)U\ket{\psi}\ket{\psi'}}^2 = \norm{\Pi_i\ket{\psi} \otimes U_i\ket{\psi'}}^2 = \norm{\Pi_i \ket{\psi}}^2.
+    \end{equation}
+    where the second last equality uses the fact that $\norm{u \otimes v} = \norm{u}\norm{v}$ and that $\norm{Vu} = \norm{u}$ for unitary $V$. And the state on the second register becomes $U_i\ket{\psi'}$. This is precisely the same effect as the original procedure where the measurement comes first.
+\end{factbox}
+
+Using these two design principles, we can show the following:
+\begin{propbox}{: General quadratic upper bound on $Q(OR_n)$}
+    $\exists c > 0$ such that for all $n \in \NN$ we have $Q(OR_n) \leq c\sqrt{n}$. 
+\end{propbox}
+\begin{proof}
+    First, we may assume that $\abs{x} \leq 0.01n$. Else, if we randomly query 10000 indices of $x$, we'll not find a $1$ (i.e. fail to distinguish the input from $0^n$) with probability at most
+    \begin{equation}
+        \left(1 - \frac{0.01n}{n}\right)^{10000} \leq e^{-100}
+    \end{equation}
+    which is negligeble compared to the bounded error $1/3$ we care about (formally we would need to consider all failure probabilities and then use Boole's inequality). The inequality uses that $1 - x \leq e^{-x}$ for all $x \geq 0$. 
+
+    From the previous analysis, we see that, on input $x \in \set{0, 1}^n$ using $k$ queries we can get the probability of outputting $0$ to be:
+    \begin{equation}
+        p_x(k) = \cos^2(2\theta_xk) = \frac{1 + \cos(4\theta_x k)}{2}.
+    \end{equation}
+    where $\theta_x = \arcsin(\sqrt{\abs{x}/n})$. Plot the graph of $p_x(k)$ as a function of $k$; note that its period $T_x$ satisfies:
+    \begin{equation}\label{eq-lec4bounds}
+        15 \leq \frac{\pi}{2\arcsin\sqrt{0.01}} \leq T_x \coloneqq \frac{\pi}{2\theta_x} \leq \frac{\pi}{2}\sqrt{n},
+    \end{equation}
+    where the first inequality uses the fact that $\abs{x} \leq 0.01n$ and the last inequality uses $\abs{x} \geq 1$ (together with the monotonicity of $\arcsin(a)$ for $a \in [0, 1]$ and $\arcsin(a) \geq a$ for $a \in [0, 1]$).
+
+    Therefore, in the interval $[1, \lceil \frac{\pi}{2}\sqrt{n} \rceil]$, $p_x(k)$ runs over at least one period and each period must span over at least 15 positive integers (by the first inequality of Eq. \eqref{eq-lec4bounds}).
+
+    The last step of the algorithm is:
+    \begin{itemize}
+        \item Repeat the following 10000 times:
+        \begin{enumerate}
+            \item Choose $k \in \NN$ uniformly at random between $1$ and $2\sqrt{n}$
+            \item Run Grover's quantum query algorithm which has $p_k(x)$ probability of outputting $0$ (i.e. the measurement outcome being 0).
+            \item If the output is 1, return 1. If all repeats give output 0, return 0.
+        \end{enumerate}
+    \end{itemize}
+    
+    the intuition for why this works is that if we choose an integer $k$ uniformly at random from $[1, \lceil \frac{\pi}{2}\sqrt{n} \rceil]$ then Eq. \eqref{eq-lec4bounds} shows that $p_x(k)$ is a constant away from $1$ with constant probability (over the randomness of the choice of $k$) (think pictorially).
+    
+    This means that the quantum query algorithm will output $1$ with constant probability. (Recall $p_x(k)$ is the probability of the quantum algorithm outputting $0$.) Since we would never see $1$ when $x = 0^n$, we can just repeat this a large number of times and output $1$ if and only if the quantum query algorithm outputs a $1$ in any of those repeats. This allows us to suppress the error probability to be negligible.
+\end{proof}
+
+Some remarks:
+\begin{enumerate}
+    \item To see that the query algorithm described in the proof is a bonafide quantum query algorithm according to our definition, we need to use both facts that we established earlier, i.e., quantum can simulate randomized and principle of deferred measurement. The first fact allows us to convert the randomized query algorithm doing the preprocessing to a quantum query algorithm. But this quantum query algorithm could continue running if its output is not 1, and recall a quantum query algorithm's output always arises from a measurement. However, by the second fact, we can defer this measurement to the end. The second fact also allows us to defer the measurements made in each of the repeat loops to the end.
+    \item The exposition here expands a little on Scott Aaronson’s \href{https://www.scottaaronson.com/qclec/22.pdf}{lecture notes on Grover search} (top of page 8).
+    \item A somewhat different algorithm, along the lines of what Nick suggested in class of exponentially increasing k from 1 to $O(n)$, is analyzed in detail in Section 4 of \href{https://arxiv.org/pdf/quant-ph/9605034.pdf}{this paper}.
+    \item In fact, there's yet another algorithm for computing ORn using a “fully quantum strategy” (i.e., very unlike the two algorithms mentioned above that are essentially Grover + classical ideas) called “fixed-point amplitude amplification”. See \href{https://arxiv.org/abs/1409.3305}{this paper}. Maybe we'll have time to discuss this when we talk about quantum signal processing.
+\end{enumerate}
+
+\begin{propbox}{: Error suppression/Chernoff bound}
+    Let $\e \in (0, 1/3)$. Let $f: D \subseteq \set{0, 1, \ldots, m-1}^n \to \Gamma$. Then $R_\e(f) \leq R(f)\lceil 18\ln(1/\e)\rceil$ and $Q_\e(f) \leq Q(f)\lceil 18\ln(1/\e)\rceil$.
+\end{propbox}
+\begin{proof}
+    Will prove the randomized case. Same idea also works in the quantum case via the principle of deferred measurement.
+
+    Suppose $\mathcal{T}$ is a RDT that computes $f$ with bounded error $1/3$. Take $k \in \NN$ copies of $\mathcal{T}$ and output the modal output of the $k$ copies. For a given $x \in D$, let $X$ denote the number of copies that ouput the correct answer on $x$, the probability that each copy outputs the correct answer $p = \frac{1}{2} + \delta$, where $\delta \geq 1/6$ and the probability that each copy outputs the incorrect answer is $q = 1-p = \frac{1}{2} - \delta \leq \frac{1}{3}$. Then, we are correct if and only if $X > k/2$, So, the probability that we are incorrect is:
+    \begin{align*}
+        Pr[X\leq k/2] &= \sum_{i=0}^{k/2}Pr[X=i] = \sum_{i=0}^k/2\binom{k}{i}p^iq^{k-i}
+        \\ &\leq \sum_{i=0}^{k/2} \binom{k}{i}p^{k/2}q^{k/2}
+        \\ &\leq 2^k(pq)^{k/2}
+        \\ &= 2^k\left(\frac{1}{2} + \delta\right)^{k/2}\left(\frac{1}{2}-\delta\right)^{k/2}
+        \\ &= 2^k\left(\frac{1}{4} - \delta^2\right)^{k/2}
+        \\ &= (1-4\delta^2)^{k/2}
+        \\ &\leq e^{-2k\delta^2}
+    \end{align*}
+    So if we pick $k \geq \ln(1/\e)/(2\delta^2)$, we have $pr[X \leq k/2] \leq \e$. Since $\delta \geq 1/6$, it suffices to pick $k \geq 18\ln(1/\e)$. Hence the proposition.
+\end{proof}
+
+Remark: We have shown that given $k$ i.i.d. random variables $X_1, \ldots, X_k$ taking variables in $\set{0, 1}$ such that $\exists \delta \in [0, 1/2]$, $\forall i, Pr[X_i = 1] = \frac{1}{2} + \delta$. Then, $Pr[\sum_{i=1}^k X_i \leq k/2] \leq e^{-2k\delta^2}$. This type of bound is known as a Chernoff bound,  there are more sophisticated variants with more sophisticated proofs. The rough-and-ready proof given here is taken from \href{https://www.cambridge.org/highereducation/books/quantum-computation-and-quantum-information/01E10196D0A682A6AEFFEA52D53BE9AE#overview}{Nielsen and Chuang}, Box 3.4.

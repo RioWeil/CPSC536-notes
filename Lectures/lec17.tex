@@ -1,0 +1,64 @@
+\section{Amplitude Amplification in Element Distinctness, Quantum Walk}
+\textcolor{red}{Missed this lecture - notes based on provided references.}
+
+\subsection*{Grover Method for ED Problem}
+A classical algorithm takes $\Omega(n)$ to solve ED as it is at least as hard as unstructured search, and therefore the quantum lower bound is $\Omega(\sqrt{n})$. 
+
+By using Grover recursively, we can improve on the trivial $O(n)$ running time in the quantum case. Consider the subgroutine - query $f$ in $l$ randomly chosen places, and check whether one of those $l$ belongs to a piar of inputs belongs to a pair by doing Grover on the remaining $n-l$. The initial setuip takes $l$ queries and Grover takes $O(\sqrt{n-l}) = O(\sqrt{n})$ queries for a total of $l + O(\sqrt{n})$. This fails mst of the time, but succeeds with probability at least $l/n$. To boost it, we can use amplitude amplification (see last lecture) which takes $O(\sqrt{n/l})$ steps to boost the success probability ot a constant. Overall, we obtain a success probability of $\Omega(1)$ with:
+\begin{equation}
+    (l+\sqrt{n})\sqrt{n/l} = \sqrt{nl} + n/\sqrt{l}
+\end{equation}
+queries. To optimize the query complexity, we set the two terms to be equal, so $l = \sqrt{n}$ and so we obtain the claimed $Q(ED_n) = O(n^{3/4})$.
+
+Note that the time complexity analysis of this algorithm would contain extra logarithmic factors, as the inner recursive use of Grocer must check an element against $l$ queried function values, which is done in $O(\log l)$ time.
+
+The lower bound is improved to $\Omega(n^{2/3})$ by using the $\Omega(n^{1/3})$ lower bound for collision by Aaronson and Shi. The quantum walk algorithm will give us an upper bound of $O(n^{2/3})$, showing that $Q(ED_n) = \Theta(n^{2/3})$. Let us thus move to discussion of the quantum walk.
+
+\subsection*{Discrete-time quantum walks}
+A simple example of a dicrete-time random walk on a graph $G$ is where we move from any vertex to each of its neighbours with equal probability. Thus the walk is governed by the $\abs{V} \times \abs{V}$ matrix $M$ with entries:
+\begin{equation}
+    M_{jk} = \begin{cases}
+        1/\text{deg}(k) & (j, k) \in e
+        \\ 0 & \text{ otherwise}
+    \end{cases}
+\end{equation}
+for $j, k \in V:$ an initial probability distribution $p$ over the vertices evolves to $p' = Mp$ after one step of the walk.
+
+To define a quantum analog, we want to specify a unitary $U$ such that given an input state $\ket{j}$ corresponding to $j \in V$ it evolves into a superposition of the neighbours. We want this to happen the same way at every vertex, so it is tempting to write:
+\begin{equation}
+    \ket{j} \mapsto \ket{\partial_j} \coloneqq \frac{1}{\sqrt{\text{deg}(j)}}\sum_{k: (j, k) \in E}\ket{k}
+\end{equation}
+but the above does not define a unitary transformation, since the orthogonal states $\ket{j}, \ket{k}$ corresponding to adjacent $j, k$ with common neighbour $l$ evolve to non-orthogonal states. We could potentially avoid this using phases, but this sacrifices the idea of having the operator act identically one each site (and for some graphs it simply is not possible).
+
+We get around this if we enlarge the Hilbert space, an idea proposed by Watrous as part of a logarithmic-space quantum algorithm for deciding whether two vertices are connected in a graph. Let the Hilbert space consist of $\ket{j, k}$ where $(j, k) \in E$. We can think of the walk as taking place on the (directed) edges of the graph; the state $\ket{j, k}$ represents a walker at vertex $j$ that will move towards vertex $k$. Each step of the walk consists of two operations. sents a walker at vertex j that will move toward vertex k. Each step of the walk consists of two operations. First, we apply a unitary transformation that operates on the second register conditional on the first register. This transformation is sometimes referred to as a ``coin flip'', as it modifies the next destination of the walker. A common choice is the Grover diffusion operator over the neighbors of $j$, namely:
+\begin{equation}
+    C \coloneqq \sum_{j \in V}\dyad{j}{j} \otimes (2\dyad{\partial_j}{\partial_j} - I)
+\end{equation}
+Next, the walker is moved to the vertex indicated in the second register. Since this must be unitary, we have to swap the registers using:
+\begin{equation}
+    S \coloneqq \sum_{(j, k) \in E}\dyad{j, k}{k, j}
+\end{equation}
+Overall, one step of the discrete-time quantum walk is described by $SC$.
+
+In principle this can define a DTQW on any graph, but in practice we use the alternative framework of Quantum Markov chains.
+
+\subsection*{Quantum Markov Chains}
+A discrete-time classical random walk on an $N$-vertex graph can be represented by an $N \times N$ matrix $P$. the entry $P_{kj}$ represents the probability of making a transition to $k$ from $j$, so the initial probability $P \in \RR^n$ becomes $Pp$. To preserve normalization we require $\sum_{k=1}^N P_{jk} = 1$ and call these matrices are \emph{stochastic}.
+
+For any $N \times N$ stochastic $P$, we can define a corresponding discrete-time quantum walk, a unitary operation on $\CC^N \otimes \CC^N$. To this end we introduce:
+\begin{equation}
+    \ket{\psi_j} \coloneqq \ket{j} \otimes \sum_{k=1}^N \sqrt{P_{kj}}\ket{k} = \sum_{k=1}^N\sqrt{P_{kj}}\ket{j,k}
+\end{equation}
+Each state is normalized due to $P$ being stochastic. Let:
+\begin{equation}
+    \Pi \coloneqq \sum_{j=1}^N \dyad{\psi_j}{\psi_j}
+\end{equation}
+denote the projection onto the span of the $\ket{\psi_j}$s. Let:
+\begin{equation}
+    S \coloneqq \sum_{j, k = 1}^N \dyad{j, k}{k, j}
+\end{equation}
+be the operator that swaps the two registers. Then, one step is $U \coloneqq S(2\Pi - 1)$. Notice that if $P_{jk} = A_{jk}/\text{deg}(k)$ then this is the coined quantum walk using the Grover diffusion operator as the coin flip. Two steps gives:
+\begin{equation}
+    [S(2\Pi - 1)]^2 = (2S\Pi S - 1)(2\Pi - 1)
+\end{equation}
+which can be inrepreted as the reflection about span$\set{\ket{\psi_j}}$ followed by reflection about span$\set{S\ket{\psi_j}}$ (the states where we condition on the second register to do a coin operation on the first). To understand the behavior of the walk, we will now compute the spectrum of $U$; but note that it is also possible to compute the spectrum of a product of reflections more generally.

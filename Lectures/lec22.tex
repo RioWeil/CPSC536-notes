@@ -1,0 +1,107 @@
+\section{Adversary methods continued, Divide and Conquer}
+\textcolor{red}{There is some repetition here with the material in the last section, which was a missed lecture.}
+\subsection*{Adversary bound}
+\begin{propbox}{}
+    Let $f: D \subseteq \set{0, 1}^n \to \set{0, 1}$. Then $Q_\e(f) \geq \frac{1-2\sqrt{\e(1-\e)}}{2}\text{Adv}(f)$.
+\end{propbox}
+\begin{proof}
+    We have:
+    \begin{equation}
+        W^j \coloneqq \sum_{x, y \in D}a_x^*a_y\Gamma_{xy}\braket{\psi^j_x}{\psi^j_y}.
+    \end{equation}
+    $\Gamma$ is an adversary matrix, i.e. it is symmetric, real, and $f(x) = f(y) \implies \Gamma_{xy} = 0$. 
+
+    By choosing $a \in \CC^{\abs{D}}$ such that $\norm{\Gamma} = \bra{a}\Gamma\ket{a}$, we have $\abs{W^0} = \norm{\Gamma}$ and $\abs{W^T} \leq 2\sqrt{\e(1-\e)}\norm{\Gamma}$ (shown previously). Let us calculate the difference $W^{j+1}-W^j$:
+    \begin{equation}
+        W^{j+1}-W^j = \sum_{xy}a_x^*a_y\Gamma_{xy}\left(\braket{\psi_x^{j+1}}{\psi_y^{j+1}} - \braket{\psi_x^j}{\psi_y^j}\right)
+    \end{equation}
+    note that $\ket{\psi_x^{j+1}} = U_{j+1}O_x\ket{\psi_x^j}$. Since the $U$ cancels when we take the inner product, we note that:
+    \begin{equation}
+        \braket{\psi_x^{j+1}}{\psi_x^{j+1}} = \bra{\psi_x^j}O_xO_y\ket{\psi_y^j}
+    \end{equation}
+    and in fact this motivates the definition of the ``step''.
+
+    We use the phase oracle definition of $O_x$, i.e. rather than $O_x\ket{i, b} = \ket{i, x_{i+1} \oplus b}$ we take $O_x\ket{i, b} = (-1)^{b \cdot x_{i+1}}\ket{i, b}$. Then:
+    \begin{equation}
+        O_xO_y = \sum_{i, b}(-1)^{b(x_{i+1} + y_{i+1})}\dyad{i, b}{i, b}
+    \end{equation}
+    but since $\II = \sum_{i, b}\dyad{i, b}{i, b}$. So then, $O_xO_y - \II = -2\sum_{i, x_i \neq y_i} P_i$ with $P_i = \dyad{i, 1}{i, 1}$. 
+
+    Now looking back at the difference of the $W$s, we can write:
+    \begin{equation}
+        W^{j+1} - W^j = \sum_{x, y \in D}\sum_i a_x^*a_y 
+        (\Gamma_i)_{xy}\bra{\psi_x^j}P_i\ket{\psi_y^j} = \sum_{i=1}^n\Tr(Q\Gamma_iQ^\dag)
+    \end{equation}
+    where $Q = \sum a_xP_i\dyad{\psi_x^j}{x}$. Then:
+    \begin{equation}
+        \abs{W^{j+1}-W^j} \leq \sum_{i=1}^n \norm{Q_i}^2_2\norm{\Gamma_i}
+    \end{equation}
+    Then:
+    \begin{equation}
+        \norm{Q_i}^2_2 = \Tr(Q_i^\dag Q_i) = \Tr\left(\sum_x a_x^*\dyad{x}{\psi_x^i}P_i^\dag \sum_y a_yP_i\dyad{\psi_y^i}{y}\right) = \sum_x \abs{a_x}^2 \bra{\psi_x^j}P_i\ket{\psi_x^j}
+    \end{equation}
+    so then:
+    \begin{equation}
+        \abs{W^{j+1}-W^j} \leq \max_i \norm{\Gamma_i}\sum_i^n \norm{Q_i}_2^2 = \max_i \norm{\Gamma_i}\sum_i^n\sum_x\norm{P_i\ket{\psi_x^j}}^2
+    \end{equation}
+    the norm square appearing in the above is less than 1.
+
+    Combining the three results $\abs{W^0} = \norm{\Gamma}$, bound on $\abs{W^T}$, bound on $\abs{W^{j+1}-W^j}$, we obtain:
+    \begin{equation}
+        T \geq \frac{1-2\sqrt{\e(1-\e)}}{2}\frac{\norm{\Gamma}}{\max_i\norm{\Gamma}} \implies T \geq \frac{1-2\sqrt{\e(1-\e)}}{2}\text{Adv}(f).
+    \end{equation}
+\end{proof}
+
+\subsection*{A simple example of divide-and-conquer}
+\begin{propbox}{}
+    $\exists c_1, c_2 > 0$ such that for any $f: \Sigma^n \to \set{0, 1}$, $c_1\text{Adv}(f) \leq Q(f) \leq c_2\text{Adv}(f)$. 
+\end{propbox}
+We won't prove the upper bound part, but we'll use it. The proof is similar. As a comment, you can take the $\text{Adv}$ quantity, then consider a semidefinite program (then dualize) to get a minimizing program, then construct a quantum algorithm.
+
+Why should we consider this adversary quantity when trying to study divide and conquer quantum algorithms? We consider:
+\begin{factbox}{}
+    For $f: \Sigma^a \to \set{0, 1}$ and $g: \Sigma^b \to \set{0, 1}$, if we consider $F: \Sigma^a \times \Sigma^b \to \set{0, 1}$ iwth $F(x, y) = f(x) \land g(y)$ (or $\lor$) then $\text{Adv}(F) = \sqrt{\text{Adv}(f)^2 + \text{Adv}(g)^2}$.
+\end{factbox}
+
+Now if we consider $OR_n(x) = OR(OR_{n/2}(x_L), OR_{n/2}(x_R))$ but then this implies $Q_n \leq \sqrt{2}Q_{n/2}$ if we solve the recurrence so $Q_n = O(\sqrt{n})$. But this bound of $Q_n \leq \sqrt{2}Q_{n/2}$ is NOT TRUE for the quantum query complexity. 
+
+But if we consider the adversary quantity, $\text{Adv}(OR_n) \leq \sqrt{\text{Adv}(OR_{n/2})^2 + \text{Adv}(OR_{n/2})^2} = \sqrt{2}\text{Adv}(OR_{n/2})$. So what we hoped for for the quantum complexity holds exactly for the adversary object. Therefore $\text{Adv}(OR_n) \leq \sqrt{n}$.
+
+As an example, suppose $\Sigma = \set{0, 1, 2}$. Then, $f: \Sigma^n \to \set{0, 1}$. Then $f(x) = 1$ iff $x$ contains a substring of the form $20*2$ ($*$ denoting any number of repeating zeros). So $20021$ would be $f = 1$, and $20102$ would be $f = 0$. 
+
+So how would we find this using divide and conquer? There are three possibilites if we split the input string; either the substring can appear in $x_L$ or $x_R$ or between the two. So, we consider:
+\begin{equation}
+    f_n(x) = f_{n/2}(x_L) \lor f_{n/2}(x_R) \lor g(x)
+\end{equation}
+with $g$ accounting for the center part. So then:
+\begin{equation}
+    \text{Adv}(f_n)^2 \leq 2 \text{Adv}(f_{n/2})^2 + \text{Adv}(g)^2 \leq 2\text{Adv}(f_{n/2})^2 + O(Q(g)^2)
+\end{equation}
+We do this by grover binary search, because we check to see if the bit string on the right is all zero $O(\sqrt{n})$, then halve that which is $O(\sqrt{n/2})$, and so on. Therefore the $O(Q(g)^2) = O((\sqrt{n})^2) = O(n)$. Therefore, the recurrency relation reads:
+\begin{equation}
+    \text{Adv}(f(n))^2 = 2\text{Adv}(f_{n/2})^2 + O(n)
+\end{equation}
+The $O(n)$ does not enter the recurrence part, and we end up solving it to find:
+\begin{equation}
+    \text{Adv}_n(f_n) \leq O(\sqrt{n\log n})
+\end{equation}
+note that a direct Grover search method before this result gave $O(\sqrt{n}\log n)$. 
+
+Another note - bonus HW 2 problem. Doable with just Grover, but it's basically the same as this problem. The hard instance of this problem are when all the edges and the top and bottom are entirely present, and this technique gives a nice way to do it.
+
+\subsection*{$k$-common subsequence}
+We take $k$ a constant. Consider $\Sigma^n \to x = \text{einstein}$ and $\Sigma^n \to y = \text{entwined}$. Here the e-n-t-i-n would be a common 4-subsequence. The $k$-common subsequence problem is whether the two strings share a $k$-common subsequence or not. We denote this as $-kCS$
+
+The randomized complexity of this problem is $\Omega(n)$. If we assume we know what $x$ is, then all it is is a search problem on $y$. 
+$Q_(1-CS) \leq O(n^{2/3})$ by its commonality to element distinctness. If we generalize, we find $O(k-CS) \leq O(n^{(k+1)/(k+2)})$ using quantum walk.
+
+But in fact we can do better.
+
+\begin{propbox}{}
+    For all constant $k$, $Q(kCS) \leq \tilde O(n^{2/3})$ ($\tilde{}$ denoting polylogarithmic factors).
+\end{propbox}
+We split up $x, y$ into $m$ parts. $k$-CS could be SIMPLE if the commonality occurs within the same part, or COMPOSITE otherwise.
+
+For COMPOSITE, we have $O(\sum_{j=1}^{k-1}a_j(n)\log(n))$ where $a_j(n)$ is the Adv. quantity of $j-CS$. 
+
+For the SIMPLE case, A priori there are $m^2$ possible paths. We need to do a search of $m^2$ parts. But this is not actually what we need - we can get away with $O(m)$. $2m-1$ suffices. Do the following precomputation. Compute the $m^2$ lines between the blobs, where the line indicates whether the two blobs have a common symbol. But importantly, this is not whether the blobs share a $k$-CS, but rather a common symbol/$1$-CS. I can then afford to do $m^2$ checks because we only do a 1-$CS$. This is just $ED$ so is $O(m^2n^{2/3})$ (really $(n/m)^{2/3}$, but this wont matter). The worst case is lines going from all top ones to the first blob on the bottom and all bottom ones to the first blob on the top

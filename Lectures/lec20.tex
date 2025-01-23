@@ -1,0 +1,82 @@
+\section{Quantum Walk for OR and ED}
+\textcolor{red}{Missed this lecture - notes based on provided references.}
+\subsection*{Unstructured Search}
+Now we begin to discuss applications of quantum walks to search algorithms. We start with the most basic of all search problems, the unstructured search problem (which is solved optimally by Grover's algorithm). We discuss how this problem fits into the framework of quantum walk search, and also describe amplitude amplification and quantum counting in this setting. We also discuss quantum walk algorithms for the search problem under locality constraints.
+
+In the unstructured search problem, we are given a black box $f: S \to \set{0, 1}$ where $S$ is a finite set with $\abs{S} = N$. The inputs $x \in M$ where $M \coloneqq \set{x \in S: f(x) = 1}$ are called \emph{marked items}. In the decision version of the problem, our goal was to determine whether $M$ was empty or not. Now we are interested in finding a marked item when it exists.
+
+The decision problem requires $\Omega(N)$ classical queries, and $N$ queries suffice, so unstructured search is classically $\Theta(N)$.
+
+We are already familiar with Grover which does this in $O(\sqrt{N})$. We start with $\ket{S} = \sum_{x \in S}\ket{x}/\sqrt{N}$ and alternatively apply the reflection about the set of marked items $\sum_{x \in M}2\dyad{x}{x} - 1$, and the reflection about $S$, $2\dyad{S}{S} - 1$. The former is done with two queries to $f$ and the latter none. It is straightforward to show that there is some $t = O(\sqrt{N/\abs{M}})$ for which $t$ steps of this gives a state with constant overlap on $\ket{M}$ so a measurement reveals a marked item with constant probability.
+
+It can be shown that unstructured search requires $\Omega(\sqrt{N/\abs{M}})$ queries. We discuss this when we discuss adversary lower bounds.
+
+Consider the discrete-time random walk on the complete graph, which has stochastic matrix:
+\begin{equation}
+    P = \frac{N}{N-1}\dyad{S}{S} - \frac{1}{N-1}I
+\end{equation}
+It has eigenvalues 1 (non-degenerate) and $-1/(N-1)$ (degeneracy $N-1$). Since the graph is highly connected, its spectral gap is very large, with $\delta = 1 + \frac{1}{N-1} = \frac{N}{N-1}$.
+
+This random walk gives rise to a very simple classical algorithm for unstructured search. In this algorithm, we start from a uniformly random item and repeatedly choose a new item uniformly at random from the other $N - 1$ possibilities, stopping when we reach a marked item. The fraction of marked items is $\e = \abs{M}/N$ , so the hitting time of this walk is
+\begin{equation}
+    O(\frac{1}{\delta\e}) = \frac{(N-1)N}{N\abs{M}} = O(N/\abs{M})
+\end{equation}
+(this is only an upper bound on the hitting time, but in this case we know it is optimal). Of course, if we have no a priori lower bound on $\abs{M}$ if it is non-empty, we can only say that $\e \geq 1/N$ so the running time is $O(N)$.
+
+The corresponding quanrum walk has hitting time:
+\begin{equation}
+    O(\frac{1}{\sqrt{\delta\e}}) = O(\sqrt{N/\abs{M}})
+\end{equation}
+corresponding to Grover's running time. To see that we get a total algorithm which is $O(\sqrt{N/\abs{M}})$, we need to show the quantum walk takes $O(1)$ quantum queries.
+
+We can modify the classical walk matrix to where the first item is marked, and then $\ket{\psi_1} = \ket{1, 1}$ and $\ket{\psi_j} = \ket{j, S\setminus\set{j}} = \sqrt{\frac{N}{N-1}}\ket{j, S} - \frac{1}{\sqrt{N-1}}\ket{j, j}$ for $j = 2, \ldots, N$. With a general $M$, the projector onto the span of these states is:
+\begin{equation}
+    \Pi = \sum_{j\in M}\dyad{j, j}{j, j} + \sum_{j \notin M}\dyad{j, S \setminus \set{j}}{j, S \setminus \set{j}}
+\end{equation}
+so $2\Pi - 1$ acts as Grover diffusion over the neighbors when when the vertex is unmarked, and as a phase flip when the vertex is marked. (Note that since we start from the state $\ket{\psi} = \sum_{j \notin M}\ket{\psi_j}$, we stay in the subspace of $\ket{j, k}$ with $(j, k)$ edges, and have zero support for $\ket{j, j}$ for $j \in V$ so $2\Pi - 1$ acts as $-1$ when the first register holds a marked vertex. ach such step can be implemented using two queries of the black box, one to compute whether we are at a marked vertex and one to uncompute that information; the subsequent swap operation requires no queries. Thus the query complexity is indeed $O(\sqrt{N/\abs{M}})$.
+
+This is not exactly the same as Grover - it works in $\CC^N \otimes \CC^N$ instead of $\CC^N$. But it is very closely related. In Grover, we can view $2\dyad{S}{s} - 1$ as a discrete time quantum walk. 
+
+The algorithm we have described so far only solves the decision version of unstructured search. To find marked item, we could use bisection, but this would introduce a logarithmic overhead. In fact, it can be shown that the final state of the quantum walk algorithm actually encodes a marked item when one exists.
+
+\subsection*{Quantum Walk Algorithm}
+Ambainis’s algorithm is to quantize a walk on the Johnson graph $J(n, m)$ where $m$ is chosen appropriately. The graph has $\binom{n}{m}$ vertices corresponding to subsets of $\set{1, 2, \ldots, n}$ of size $m$, and two vertices are connected by an edge if the subsets differ in exactly one element.
+
+To simplify, we use the Hamming graph $H(n, m)$ - where the vertices are $m$-tuples of values from $\set{1, 2, \ldots, n}$ (so there are $n^m$ vertices). Two vertices are connected vy an edge if they differ in exactly one coordinate. There are two main differences betwen the two graphs; the Hamming graph allows for repeated elements, and the order matters. This doesn't impact the performance of the algorithm significantly.
+
+At each vertex, we store the values of the function at the corresponding inputs, i.e. $(x_1, x_2, \ldots, x_m) \in \set{1, 2, \ldots, n}^m$ is represented by the state
+\begin{equation}
+    \ket{x_1, x_2, \ldots, x_m, f(x_1), f(x_2), \ldots, f(x_m)}
+\end{equation}
+To prepare such states, we must query the black-box function. In particular, to prepare an initial superpo- sition over vertices of this graph takes $m$ queries. However, we can move from one vertex to an adjacent one using two queries; to replace $x$ by $y$ in a particular coordinate, we use one query to erase $f(x)$ and another to compute $f(y)$.
+
+In the search problem, the marked vertices are those containing some $x \neq y$ with $f(x) = f(y)$. Notice that, given the stores function values, we can check whether we are at a marked vertex with no additional queries. The total number of marked vertices (in this case, where the elements are not all distinct) is at least $\binom{m}{2}(n-2)^{m-2}$ , so the fraction of marked vertices is:
+\begin{equation}
+    \e \geq \frac{m(m-1)(n-2)^{m-2}}{2n^m}
+\end{equation}
+To analyze, we need the eigenvalues of the relevant Markov chain. The adjacency matrix of $H(n, m)$ is $A = \sum_{i=1}^m (J-I)^{(i)}$, where $J$ denotes the $n \times n$ matrix of all $1$s, and the superscript indicates that this matrix acts on the $i$th coordinate. The eigenvalues of $J$ are $n$ and 0, so the eigenvalues of $J-I$ are $n-1$ and $-1$. Hence the largest eigenvalue of $A$ is $m(n-1)$ (the degree of any vertex of $H(n, m)$) and the second largest is $(m-1)(n-1)-1 = m(n-1)-n$. Normalizing by the degree, we find the spectral gap to be:
+\begin{equation}
+    \delta = \frac{n}{m(n-1)}
+\end{equation}
+Finally, how many queries does the algorithm use? Taking into account the initial $m$ queries used to prepare the starting state and $2$ per step of the walk, we have the total number:
+\begin{equation}
+    m + 2O(\frac{1}{\sqrt{\delta \e}}) = m + O(\frac{n}{\sqrt{m}})
+\end{equation}
+
+We can again set the terms to be equal to optimize the performance - since $m^{3/2} = O(n)$, we should take $m = \Theta(n^{2/3})$ and so the total number of queries is $O(n^{2/3})$ which matches the lower bound (and is therefore optimal).
+
+Note that for the classical random walk search algorithm that we have quantized, the corresponding query complexity is $m + O(n^2/m)$, optimized by $m = n$. This gives no improvement over querying every input (as we knew).
+
+
+\subsection*{Quantum Walk with Auxiliary Data}
+Algorithms based on similar ideas turn out to be useful for a wide variety of problems, including deciding whether a graph contains a triangle (or various other related graph properties), checking matrix multiplica- tion, and testing whether a group is abelian. In general, as in the element distinctness case, we may need to store some data at each vertex, and we need to take into account the operations on this data when analyzing the walk.
+
+Suppose we have setup cost $S$, cost $U$ to update the state after a step of the walk, and $C$ to check whether a vertex is marked. In the ED problem, we had $S = m$ to query $m$ positions, $U = 2$ to remove one item and add another, and $C = 0$ since the function values for the subset are stored. In general, there is an algorithm to solve such a problem with total cost:
+\begin{equation}
+    S + \frac{1}{\sqrt{\delta\e}}(U + C).
+\end{equation}
+It turns out that for some problems, when $C \gg U$, it is advantageous to take many steps on the unmarked graph before performing a phase flip on the marked sites. Thsi is how Ambainis' algorithm originally worked, though for ED its not necessary. Using this idea, one can give a general quantum walk search algorithm with total cost:
+\begin{equation}
+    S + \frac{1}{\sqrt{\e}}\left(\frac{1}{\sqrt{\delta}}U + C\right)
+\end{equation}
+In fact, it is also possible to modify the general algorithm so it finds a marked item when one exists.

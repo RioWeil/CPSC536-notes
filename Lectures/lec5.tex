@@ -1,0 +1,79 @@
+\section{Time Complexity}
+We introduce machinery to define time complexity of decision problems.
+\begin{defbox}{: Decision Problem}
+    A decision problem is a set of functions $\mathcal{P} = \set{P_n: \set{0, 1}^n \to \set{0, 1}, n \in \NN}$.
+\end{defbox}
+Two remarks:
+\begin{enumerate}
+    \item This intuitively defines the problem of an input of $x \in \set{0, 1}^n$ and the desired output is $P_n(x)$. 
+    \item Given a language $L = \set{0, 1}^* \coloneqq \bigcup_{n \in \NN}\set{0, 1}^n$, we note the correspondence $\mathcal{P} \leftrightarrow L \coloneqq \bigcup_{n \in \NN}P_n^{-1}(1)$.
+\end{enumerate}
+Defining quantum time complexity in terms of Turing machines is difficult, but in the picture of circuits it is intuitive.
+
+\begin{defbox}{: Classical and Quantum Circuits}
+    A classical (Boolean/cit) circuit is a directed acyclic graph, with $a \in \NN$ vertices uniquely labelled as $1, \ldots, a$ with no incoming edges ($a$ ``input bits''), $b \in \NN$ vertices uniquely labelled by $1', \ldots, b$ with no outgoing edges ($b$ ``output bits'') with all other vertices labelled by:
+    \begin{equation}
+        cGATES \coloneqq \set{FANOUT, AND, OR, NOT}
+    \end{equation}
+    where $AND, OR$ have 2 incoming edges and 1 outgoing edge, $FANOUT$ has 1 incoming edge and 2 outgoing edges, and $NOT$ has 1 incoming edge and 1 outgoing edge. 
+
+    A quantum (Boolean/qubit) circuit is a directed acyclic graph with $a$ input bits and $b$ output bits, where the other vertices are labelled by:
+    \begin{equation}
+        qGATES \coloneqq \set{H, T, Toffoli}
+    \end{equation}
+    where $T, H$ have 1 incoming edge and 1 outgoing edge, and the $Toffoli$ has 3 incoming edges and 3 outgoing edges.
+\end{defbox}
+Note that you could have non-directed cycles in a circuit, e.g. $FANOUT$ going into an $AND$. There are also other universal gate sets we could choose, e.g. $cGATES = \set{NAND}$, or all $qGATES$ as all 1-qubit gates and any 2-qubit entangling gate.
+
+\begin{defbox}{: Computation using classical and quantum circuits}
+    In the classical case, we consider an input $\set{0, 1}^a$. We put each of $x_1, \ldots, x_a$ into the input vertices. When we see $AND$ we compute the $AND$ of the bits, when we see $OR$ we compute $OR$ of the bits, when we see $NOT$ we compute the $NOT$ of the bit, and when we see $FANOUT$ we clone the bit.
+
+    In the quantum case, we note that the input and outputs of each gate are the same and so $a = b$. We identify the input $x_1x_2\ldots x_a$ as $\ket{x_1x_2\ldots x_a}$. The gates are:
+    \begin{equation}
+        H = \frac{1}{\sqrt{2}}\m{1 & 1 \\ 1 & -1}
+    \end{equation}
+    \begin{equation}
+        T = \m{1 & 0 \\ 0 & e^{i\pi/4}}
+    \end{equation}
+    \begin{equation}
+        Toffoli = \m{1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\ 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 \\ 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\ 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\ 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\ 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0}
+    \end{equation}
+    with identies tensored appropriately on the qubits on which the gates do not act.
+
+    Finally, we make the measurement of:
+    \begin{equation}
+        \set{\Pi_z \coloneqq \dyad{z}{z} : z \in \set{0, 1}^b}
+    \end{equation}
+
+    A classical circuit can be ``described'' by a string $y \in \overline{cGATES}^*$ where $\overline{cGATES} = cGATES \cup \set{0, 1, Blank}$. Similarly for quantum circuits with $y \in \overline{qGATES}^*$. This is analogous to how we can encode a Turing machine as a string.
+\end{defbox}
+
+\begin{defbox}{: Deterministic/Randomized/Quantum time cmplexity of decision problems}
+    \begin{enumerate}
+        \item We say $\mathcal{P}$ can be solved in deterministic time $T$ (``solved by a deterministic algorithm in time $T$'') if $\exists$ a Turing machine $\mathcal{A}$ that for all $N \in \NN$ satisfies the following. $\forall y \in \set{0, 1}^N$, $\mathcal{A}$ runs in $O(T(n))$ steps and outputs the description of a classical circuit $C_y$ such that $C_y(0^a) = P_N(y)$.
+        \item We say that $\mathcal{P}$ can be solved in randomized time $T$ (``solved by a randomized algorithm in time $T$'') if $\exists$ a Turing machine that for all $N \in \NN$ satisdies the following. For all $y \in \set{0, 1}^N$, $\mathcal{A}$ outputs the description of a classical circuit $C_y$ on $a$ input bits and 1 output bit such that:
+        \begin{equation}
+            Pr[C_y(r) = P_N(y) \vert r \leftarrow \set{0, 1}^a] \geq \frac{2}{3}
+        \end{equation}
+        \item We say that $\mathcal{P}$ can be solved in quantum time $T$ (``solved by a quantum algorithm in time $T$'') if $\exists$ a Turing machine $\mathcal{A}$ that for all $N \in \NN$ satisfies the following. For all $y \in \set{0, 1}^N$, $\mathcal{A}$ outputs the description of a quantum circuit $C_y$ on $a$ input bits and 1 output bit such that:
+        \begin{equation}
+            Pr[z_1 = P_N(y) \vert z \leftarrow \text{meas. outcome of } C_y(\ket{0}^a)] \geq \frac{2}{3}
+        \end{equation}
+    \end{enumerate}
+\end{defbox}
+
+\begin{defbox}{: $P/BPP/BQP$}
+    $P$ is defined as the set:
+    \begin{equation}
+        P \coloneqq \set{\mathcal{P} \vert \exists c \in \NN \text{ and } T: \NN \to \NN \text{ with } T(n) = O(n^c) \text{ s.t. $\mathcal{P}$ can be solved in deterministic time $T$.}}
+    \end{equation}
+    The definitions of $BPP, BQP$ are analogous, replacing deterministic with randomized/quantum.
+\end{defbox}
+
+The key point between the query model and the circuit model is the following motto. In the query model we have $f: \set{0, 1}^n \to \set{0, 1}$. The $x \in \set{0, 1}^n$ corresponds to $x:[n] \to \set{0, 1}$ where $x_(i) = x_i$. The query model has relevance to time complexity if given the input $y \in \set{0, 1}^N$ to $P_N$ can be used to compute a circuit for $x$ efficiently.
+
+As an example; $y = (u_1 \land \lnot u_2 \land u_3) \lor \ldots$ for $u_1, \ldots, u_l$ (3-SAT) can be used to efficiently construct a classical circuit for $x: \set{0, 1}^l \to \set{0, 1}$ such that $x(u) = y$ evaluated at $u$. It is then a fact that there is a Turing machine which can efficiently construct a classical circuit $O_x$. 
+
+Note in the case of the SAT problem, it is equivalent to finding $OR(x)$. 
+
+Recall in Grover's algorithm that we also had unitaries in addition to oracles. The unitaries can also be efficiently generated from the gate set.

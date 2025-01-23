@@ -1,0 +1,75 @@
+\section{Period Finding Continued, Factoring}
+
+\subsection*{Review/Finishing the period finding problem}
+Consider $N \in \NN$, a nd a function $x: \ZZ \to \ZZ_N$. There exists $r \in \NN$ such that $x(s) = x(t) \iff s = t + r$. 
+
+\begin{enumerate}
+    \item $n = \lceil 2\log_2 \rceil + 1$ so $2^n > N^2$.
+    \item Consider $\frac{1}{\sqrt{2^n}}\sum_{s=0}^{2^n-1}\ket{s}$.
+    \item Apply $O_x$ to this to get $\frac{1}{\sqrt{2^n}}\sum_{s=0}^{2^n-1}\ket{s}\ket{x(s)}$.
+    \item Measure the 2nd register in the computational basis. Let the outcome be $x_D \in \ZZ_N$:
+    \begin{equation}
+        \II_{2^n} \otimes \dyad{x_0}{x_0} \frac{1}{\sqrt{2^n}}\sum_{s=0}^{2^n-1}\ket{s}\ket{x(s)} = \frac{1}{\sqrt{2^n}}\sum_{s=0}^{2^n-1}\ket{s}\ket{x_0}\delta_{x_0, x(s)}
+    \end{equation}
+    Pictorially we have peaks at $s_0 + nr$. Last time, a lot of the detail was that we did not assume $r \vert 2^n$. But if we did, the analysis would become much simpler, and we get:
+    \begin{equation}
+        \frac{1}{\sqrt{B}}\sum_{k=0}^{B-1}\ket{s_0 + kr}
+    \end{equation}
+    where $2^n - 1 = Br - 1$ and $B \in \set{0, 1, 2, \ldots}$. 
+    \item Now, to recover $r$ we take the $QFT_{2^n}$ of the first register. This yields:
+    \begin{equation}
+        \to \frac{1}{\sqrt{r}}\sum_{j=0}^{r-1}\ket{j\frac{2^n}{r}}
+    \end{equation}
+    note that the above expression only makes sense if $r \vert 2^n$, but for this simplified analysis we do assume it (the analysis from the previous lecture is more sophisticated, but also more general). There is also technically a complex phase factor on each of the terms in the sum above, but when we measure it in the computational basis (in the next step) since these have unit absolute value these will not factor into the analysis.
+
+    Note the QFT is necessary because before we apply it, the state depends on $s_0$ (which depends the measurement outcome $x_0$) so when we repeat this procedure generically we get different results and cannot extract the $r$. But the QFT removes this dependence.
+    \item Measure this state in the computational basis. If we do so, our outcome will be of the form $\frac{j}{r}2^n$. 
+    \item Continuing from last time (with the more generic analysis); the probability that we measure some $y_j$ such that:
+    \begin{enumerate}
+        \item $\abs{y_j - \frac{2^nj}{r}} \leq \frac{1}{2}\frac{1}{2^n}$
+        \item $j$ is coprime to $r$
+    \end{enumerate}
+    is at least $0.05\frac{1}{\ln\ln r} \geq 0.05\frac{1}{\ln\ln N}$. Of course in the simplified case we have that the first condition is trivially satisfied because the $y_j$s are literally $\frac{j}{r}2^n$.
+    \item Repeat the above steps $10000\ln\ln N$ times. Each time, let $z$ be the measurement outcome. Compute some $r' \leq N$ ($r' \in \NN$) and $j' \in \set{0, 1, \ldots, r'-1}$ such that $\abs{z - \frac{2^nj'}{r'}} \leq \frac{1}{2}\frac{1}{2^n}$. If $r', j'$ exist, and $r' \leq r_{\text{candidate}}$, set $r_{\text{candidate}} = r'$ (Note we should initialize $r_{\text{candidate}} = N + 1$). At the end, output $r_{\text{candidate}}$.
+    
+    Claim: Suppose the measurement outcome $z = y_j$ where $j \in \set{0, 1, \ldots, r-1}$ is coprime to $r$. Then, the $r'$ we output will be exactly equal to $r$.
+    \begin{proof}
+        We have $\abs{z - \frac{2^nj}{r}} \leq \frac{1}{2}\frac{1}{2^n}$. Now suppose $j' \in \set{0, 1, \ldots, r'-1}$ or $r' \in \NN$, $r' \leq N$ such that $\abs{z - \frac{2^nj'}{r'}} \leq \frac{1}{2}\frac{1}{2^n}$. We make a uniqueness argument. We have by the triangle inequality:
+        \begin{equation}
+            \abs{\frac{2^nj}{r} - \frac{2^nj'}{r'}} \leq \frac{1}{2^n}
+        \end{equation}
+        Then:
+        \begin{equation}
+            \abs{\frac{jr' - j'r}{rr'}} \leq \frac{1}{2}\frac{1}{2^n} < \frac{1}{2N^2}
+        \end{equation}
+        But $rr' \leq N^2$, so if $jr' \neq j'r$, then the LHS is greater than $\frac{1}{N^2}$, a contradiction. So, $jr' = j'r$. So $r \vert jr'$ and $r' \vert j'r$, but the first implies $r \vert r'$ as $j$ and $r$ are coprime, and the second implies that $r' \vert r$ as $r'$ is coprime to $j'$ by how it was computed. So then $r = r'$.
+    \end{proof}
+
+    The probability that one of the repeats catches the correct $r$ is high, and so we are done.
+\end{enumerate}
+
+\subsection*{Order Finding and Factoring}
+So the above period finding algorithm is $O(\ln\ln  N)$, and it is a key component of Shor's factoring algorithm. Note that we did a query model analysis, and to actually do the quantum algorithm we would need to find the corresponding quantum gates to actually perform it. That is to say, we need to describe a circuit for the unitaries $U_j$ and the operator $O_x$. 
+
+One concrete problem we can establish these for is the order finding problem. Here, the input is $a, N \in \NN$ with $a \leq N$ and $a$ coprime to $N$. The desired output is the minimal $r \in \NN$ such that $a^r = 1 \mod N$. 
+
+Note such an $r$ exists because we have $a^1, a^2, \ldots, a^{N+1}\mod N$ that take on at most $N$ values, so two must be the same, hence $a^i = a^j \mod N$ for some $i, j$. Then using $a$ coprime to $N$, $a^{j - i} = 1 \mod N$. 
+
+\begin{propbox}{}
+    $\exists$ a quantum algorithm that solves this problem in time $O((\log N)^3 \text{poly}(\log\log N))$.
+\end{propbox}
+
+How does this relate to factoring? Let us input the $N$ we are trying to factor. We choose some $a$ uniformly at random from $\set{0, 1, \ldots, N-1}$.
+\begin{enumerate}
+    \item If $a$ not coprime to $N$, we are done - just can do the Euclidean algorithm.
+    \item If $a$ coprime to $N$, then run the order finding algorithm to find $r$ such that $a^r = 1 \mod N$. Let's assume $r$ is even so $a^{r/2} + 1 \neq 0 \mod N$. Then $a^r-1 = 0 \mod N$ so $(a^{r/2} - 1)(a^{r/2} + 1) = 0 \mod N$. So then $N \vert(a^{r/2} - 1)(a^{r/2} + 1)$, and there should be nontrivial factors of $N$ in the two parts. Then we can take the GCD. 
+
+    Note that the probability that the assumption in the last step is satisfied is some constant, by number theoretic arguments.
+\end{enumerate}
+
+This is why we care about the order finding problem - because there is a fully classical reduction from it to factoring.
+
+\begin{proof}
+    (Sketch) Consider $x: \ZZ \to \ZZ_N$ defined by $x(k) = a^k \mod N$. Then $x(s) = x(t) \iff s = t + \text{ord}_N(s)$. If correct, $a^s = a^t \mod N$ so then $a^{s-t} = 1 \mod N$ tso then $\text{ord}_N(a) \vert s -t$.  
+\end{proof}
+How does this relate to period finding? Consider the function $x: \ZZ \to \ZZ_N$ defined by 

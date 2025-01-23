@@ -1,0 +1,100 @@
+\section{Period Finding}
+
+\begin{defbox}{: Period Finding Problem}
+    Let $N \in \NN$. Then, we define the period finding problem as:
+    \begin{equation}
+        \text{Period}_{N}: D \subseteq \ZZ_N^\ZZ \to \set{1, 2, \ldots, N}
+    \end{equation}
+    such that $x \in D$ if and only if there exists $r \in \NN$ such that $x(s + r) = x(s)$ for all $s \in \ZZ$. 
+\end{defbox}
+
+Note the similarity with Simon's problem; we've replaced $\mathbb{F}_2^N$ with $\ZZ_N$. Note that $\ZZ_N$ are the integers modulo $N$, and we must have $r \leq N$. 
+
+\begin{lembox}{}
+    For $r \in \NN$ such that $r > 100$, the number of elements in the set $\set{0, 1, \ldots, r-1}$ that are coprime to $r$ is at least $\frac{r}{5\ln(\ln(r))}$. Two numbers are coprime if the only common factors of the two numbers are 1.
+\end{lembox}
+
+\begin{defbox}{: Quantum Fourier Transform}
+    Let $M \in \NN$. Th quantum fourier transform $QFT_M$ on $\CC^M$ is the unitary defined by:
+    \begin{equation}
+        \ket{j} = \frac{1}{\sqrt{M}}\sum_{k=0}^M \omega_M^k\ket{k}
+    \end{equation}
+    where $\omega_M \coloneqq e^{2\pi i/M}$.
+\end{defbox}
+
+Question where did the complex numbers come from? We didn't need it in Simon's. The short answer is that it's not necessarily the complex numbers that is important, but rather it is the minus sign that is important. $\set{H, \text{Toffoli}}$ is universal as a gate set, for example.
+
+\begin{propbox}{}
+    $Q(\text{Period}_N) \leq O(\ln\ln N)$.
+\end{propbox}
+
+
+\begin{proof}
+    Let $n \coloneqq \lceil 2\log N \rceil + 1$ so that $2^n \geq N^2$. Write $2^N -1 = Br + b$, where $B \in \set{0, 1, 2, \ldots}$ with $0 \leq b \leq r - 1$. Now, create teh state:
+    \begin{equation}
+        \frac{1}{\sqrt{2^N}}\sum_{s=0}^{2^n-1}\ket{s}\ket{x(s)}
+    \end{equation}
+    using one query (in the same way as we do for Simon's algorithm). Now, we measure the second register in the computational basis via $\Pi_i = \II_{2^N} \otimes \dyad{i}{i}$ where $i \in \set{0,1, \ldots, N-1}$. 
+
+    We are promises that $x$ is periodic with period $r$. So, suppose that the outcome is $k \in \ZZ_N$. Suppose the outcome is $k \in \ZZ_N$, let $s_0 \in \set{0, 1, \ldots, r-1}$ be such that $x(s_0) = k$. Then, the state of the first register after the measurement becomes $\frac{1}{\sqrt{A + 1}}\sum_{k=0}^A \ket{s_0 + kr}$ where $A = B$ if $s_0 = b$ and $A = B - 1$ if $s_0 > b$ (this is just a technicality in case $s_0$ falls into not the last full period).
+
+    Pictorially, if we look at the amplitudes of the state, we have positive amplitudes at $s_0 + nr$, i.e. the quantum state has period of length $r$. If we now apply $\text{QFT}_{2^n}$, we get:
+    \begin{equation}
+        \frac{1}{\sqrt{2^n(A+1)}}\sum_{y=0}^{2^n-1}\omega^{s_0 \cdot y}\sum_{k=0}^A \omega^{kry}\ket{y}
+    \end{equation}
+    where we shorthand $\omega = \omega_{2^n} = \exp(2\pi i/2^n)$. 
+
+    We then have:
+    \begin{equation}
+        \sum_{k=0}^A \omega^{kry} = 1 + \omega^{ry} + \omega^{2ry} + \ldots \omega^{Ary}
+    \end{equation}
+    As $y$ goes from $0, 1, \ldots, 2^{n}-1$, $ry/2^n$ goes from $0, \ldots, r, \frac{2^n-1}{2^n} \in (r-1, r)$. Now, for each $j \in \set{0, 1, \ldots, r-1}$, let $y_j \in \set{0, 1, \ldots, 2^n-1}$ be such that $ry_j/2^n$ is closest to $j$. Then we have:
+    \begin{equation}
+        \abs{\frac{ry_j}{2^n} - j} \leq \frac{1}{2}\frac{r}{2^n}
+    \end{equation}
+
+    Side comment: Generally in textbooks the Kitaev version of the period finding algorithm is discussed. This is the Shor version, and we discuss it this way because its similar to Simon's problem.
+
+    And now we can write:
+    \begin{equation}
+        \frac{ry_j}{2^n} = j + \eta_j
+    \end{equation}
+    where $\abs{\eta_j} \leq \frac{r}{2^n+1} \leq \frac{N}{2N^2} = \frac{1}{2N}$ where we use that $r \leq N$ and $2^n > N^2$ (the intuition is more peaks = easier to extract period).
+
+    Then:
+    \begin{equation}
+        S_j = \sum_{k=0}^A \omega^{kry_j} = \sum_{k=0}^A \omega^{k 2^n(j + \eta_j)} = \sum_{k=0}^A\omega^{k_j 2^n} \cdot \omega^{k 2^n \eta_j} = \sum_{k=0}^A \omega^{k 2^n \eta_j} = \sum_{k=0}^A \exp(2\pi i k \eta_j)
+    \end{equation}
+    Two cases:
+    \begin{enumerate}
+        \item $\eta_j = 0$. Then $S_j = A + 1$. 
+        \item $\eta_j \neq 0$. Then $\abs{S_j}^2 = \lvert\frac{1 - \exp(2\pi i (A+1)\eta_j)}{1 - \exp(2\pi i \eta_j)}\rvert^2 = \frac{\sin^2(\pi (A+1)\eta_j)}{\sin^2(\pi \eta_j)} \geq \frac{\sin^2(\pi (A+1)\eta_j)}{\pi^2\eta_j^2}$
+    \end{enumerate}
+    Now, $\abs{\pi(A+1)\eta_j} = \pi(A+1)\eta_j \leq \pi(B+1)\frac{r}{2^{n+1}} \leq \frac{\pi}{2} + \frac{\pi r}{2^{n+1}} < \frac{\pi}{2} + \frac{\pi N}{2N^2} = \frac{\pi}{2} + \frac{\pi}{2N}$.
+
+    If we now assume $N > 100$, $\abs{\pi(A+1)\eta_j} \leq 0.505\pi$, but $\sin^2\theta \geq \theta^2/3$ for $\theta \in [-0.505\pi, 0.505\pi]$ and so:
+    \begin{equation}
+        \abs{S_j}^2 \geq \frac{\pi^2(A+1)^2\eta_j^2}{\pi^2\eta_j^2} \frac{1}{3} = \frac{(A+1)^2}{3}.
+    \end{equation}
+    so in both cases $\abs{S_j}^2 \geq \frac{(A+1)^2}{3}$. Therefore, if we measure the state:
+    \begin{equation}
+        \frac{1}{\sqrt{2^n(A+1)}}\sum_{j=0}^{2^n-1}\omega^{x_0 y}\sum_{k=0}^A \omega^{kry}\ket{y}
+    \end{equation}
+    in the computational basis, the probability of the outcome being $y_j$ for some $j$ such that $j \in \set{0, 1, \ldots, r-1}$ and $j$ is coprime for $r$ is at least:
+    \begin{equation}
+        \frac{r}{5\ln\ln r}\frac{1}{2^n(A+1)}\frac{(A+1)^2}{3} \geq \frac{1}{\ln\ln r} \cdot 0.05
+    \end{equation}
+    The final step of this algorithm is as follows; let $z \in \set{0, 1, \ldots, 2^{n}-1}$ be the outcome of the measurement. We compute $r' \in \NN$, $r' \leq N$ and $j' \in \set{0, 1, \ldots, r'-1}$ that is coprime to $r'$ such that:
+    \begin{equation}
+        \abs{\frac{z}{2^n} - \frac{j'}{r'}} \leq \frac{1}{2} \cdot \frac{1}{2^n}
+    \end{equation}
+    intuition; if $j', r'$ coprime then we have a unique fractional form. Two cases:
+    \begin{enumerate}
+        \item If no such $r', j'$ exist, repeat the entire procedure
+        \item If they do exist, verify $r'$ is in fact the period. Rand $r_{\text{candidate}}$ to be $r'$ if $r' \leq r_{\text{candidate}}$. 
+    \end{enumerate}
+    Repeat this $10000\ln\ln r$ times and output $r_{\text{candidate}}$. With probability $\geq 0.99$, one of the outputs will correspond to the $j$ that is coprime to $r$. (the probability of $j$ being coprime to $r$ is at most $0.05\frac{1}{\ln\ln r}) \geq 0.05\frac{1}{\ln\ln N}$ so the probability of all outputs $j$ not coprime to $r$ is $\leq \left(1 - 0.05\frac{1}{\ln\ln r}\right)^{10000\ln\ln N} \leq e^{-500} \leq \frac{1}{3}$).
+
+    Claim: If $j$ coprime to $r$, then the procedure described above will output an $r'$ such that $r' = r$. 
+
+\end{proof}

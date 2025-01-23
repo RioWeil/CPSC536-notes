@@ -1,0 +1,68 @@
+\section{Randomized Query Complexity of Simon's Problem}
+\begin{proof}
+    \begin{align*}
+        Pr[T(x) = f(x) \vert x \leftarrow \mu] &= \frac{1}{2}Pr[T(x) = f(x) \vert x \leftarrow \mu_0]  +\frac{1}{2}Pr[T(x) = f(x) \vert x \leftarrow \mu_1]
+        \\ &= \frac{1}{2}Pr[T(x) \vert x \leftarrow \mu_0] + \frac{1}{2}(Pr[T(x) = 1 \vert x \in P_1, x \leftarrow \mu_1)Pr[x \in P_1 \vert x \leftarrow \mu_1] 
+        \\ &+ Pr[T(x) = 1 \vert x \notin P_1, x \leftarrow \mu_1)Pr[x \notin P_1 \vert x \leftarrow \mu_1])
+        \\ &\leq  \frac{1}{2}Pr[T(x) = 0 \vert x \leftarrow \mu_0] + \frac{1}{2}Pr[T(x) = 1 \vert x \leftarrow \mu_0] + \frac{1}{2}Pr[x \notin P_1 \vert x \leftarrow \mu_1]
+        \\ &= \frac{1}{2} + \frac{1}{2}Pr[x \notin P_1 \vert x \leftarrow \mu_1]
+    \end{align*}
+\end{proof}
+We now move to the proof of the proposition. 
+\begin{proof}
+    By averaging argument (Yao's principle), Suppose there's an RDT $\tau$ of depth $d$, then $\forall \mu$ distribution on $D$, $\exists$ DDT $T$ such that:
+    \begin{equation}
+        Pr[T(x) = f(x) \vert x \leftarrow \mu] \geq 1 - \e
+    \end{equation}
+    where $\e = \frac{1}{3}$. 
+
+    Define $\mu_0, \mu_1$ where $\mu_b$ is supported on $D_b$ and define $\mu$ as in the Lemma. $\mu_0$ is uniformly randomly choosing a permutation on $\set{0, 1, \ldots, n-1}$ and $\mu_1$ is uniformly randomly choosing $a \leftarrow \set{0, 1}^k \setminus \set{0}$. 
+
+    Now, choose a uniformly random element for each pair $\set{x, x\oplus a}$ from $\set{0, 1, \ldots, n-1}$. 
+
+    WLOG, assume that $T$ never queries the same variable twice, and that it is  abalanced tree of depth $D$.
+
+    Let's consider the sequence of $d$ responses that $T$ gives, i.e. the labels of the edges of the decision tree. If $x \leftarrow \mu_0$, then we obtain uniformly random sequence of $d$ distinct elements in $\set{0, 1, \ldots, n-1}$. 
+
+    If instead $x \leftarrow \mu_1$: Let $t \in \set{1, \ldots, d}$, and $v_1, \ldots v_{t-1} \in \set{0, 1, \ldots, n-1}$ distinct. Let $s_1, \ldots s_t$ denote the sequence of indices that $T$ queries on $x$, given $x(s_i) = v_i$ for $i \in \set{1, \ldots, n-1}$. We will say tha the sequence $x(s_1), x(s_2), \ldots x(s_t)$ is good if all values are distinct.
+    \begin{align}
+        &Pr[x(s_1), \ldots, x(s_t) \text{ is good} \vert x(s_1) = v_1, x(s_2) = v_s, \quad x(s_{t-1}) = v_{t-1}]
+        \\ &=  Pr[x(s_t) \notin \set{x(s_1), \ldots, x(s_t)} \vert "]
+        \\ &= Pr[a(x) \notin \set{s_1 \oplus s_2, s_1 \oplus s_3, \ldots, s_1 \oplus s_{t-1}, s_2 \oplus s_3, \ldots, s_{t-2} \oplus s_{t-1}}\vert "]
+    \end{align}
+    How many elements in the above set? It is at most $\binom{t-1}{2}$. We choose randomly from $\set{0, 1}^k \setminus \set{0}$ and want to avoid a set of size $\binom{t-1}{2}$, so the probability is:
+    \begin{align}
+        &Pr[x(s_1), \ldots, x(s_t) \text{ is good} \vert x(s_1) = v_1, x(s_2) = v_s, \quad x(s_{t-1}) = v_{t-1}]
+        \\ &\geq 1 - \frac{t-1}{2^k - 1 - \binom{t-1}{2}}
+    \end{align}
+    which can be obtained by looking at the complement event and bounding it via the union bound. Since the above analysis holds for any choice of distinct $v_1, \ldots v_{t-1}$, for $1 \leq k \leq d$ we have:
+    \begin{equation}
+        Pr[\text{$x$ is $t$ good} \vert \text{$x$ is $t-1$ good}] \geq 1 - \frac{t-1}{2^k - 1 - \binom{t-1}{2}}
+    \end{equation}
+    Therefore:
+    \begin{align*}
+        &Pr[\text{$x$ is $d$-good}]
+        \\ &= Pr[\text{$x$ is $d$-good} \vert \text{$x$ is $(d-1)$ good}]Pr[ \text{$x$ is $(d-1)$ good}] + Pr[\text{$x$ is $d$-good} \vert \text{$x$ is not $(d-1)$ good}]Pr[ \text{$x$ is not $(d-1)$ good}]
+        \\ &= Pr[\text{$x$ is $d$-good} \vert \text{$x$ is $(d-1)$ good}]Pr[ \text{$x$ is $(d-1)$ good}]
+        \\ &= Pr[\text{$x$ is $d$-good} \vert \text{$x$ is $(d-1)$ good}]Pr[ \text{$x$ is $(d-1)$ good}]Pr[\text{$x$ is $d-1$-good} \vert \text{$x$ is $(d-2)$ good}]Pr[ \text{$x$ is $(d-2)$ good}]
+        \\ &= \ldots
+        \\ &\geq \left(1-\frac{d-1}{2}{2^k-1-\binom{d-1}{2}}\right)\left(1 - \frac{d-2}{2^k-1-\binom{d-2}{2}}\right)\ldots \left(1 - \frac{d-(d-2)}{2^k-1-\binom{d-(d-2)}{2}}\right) \cdot 1
+        \\ &\geq 1 - \sum_{j=1}^{d}\frac{j-1}{2^k-1-\binom{j-1}{2}}
+    \end{align*}
+    Now assume WLOG that $1 + \binom{d-1}{2} \leq \frac{2^k}{2}$ or else we're done. Then:
+    \begin{equation}
+        Pr[\text{$x$ is $d$-good}] \geq 1 - \frac{1}{2^k-1-\binom{d-1}{2}}\sum_{j=1}^d (j-1) \geq 1 - \frac{2}{2^k}\frac{1}{2}d(d-1) \geq 1 - \frac{d^2}{2k}
+    \end{equation}
+
+    Conditioned on $x$ being $d$-good, the sequence of $d$ responses to the $d$ queries that $T$ makes is a uniformly random sequence of $d$ distinct elements. Therefore, if we let $P_1 \coloneqq \set{x \in D_1 \vert \text{$x$ is $d$-good}}$ then:
+    \begin{equation}
+        Pr[T(x) = b \vert x \leftarrow \mu_0] = Pr[T(x) = b \vert x \leftarrow \mu_1, x \in P_1]. 
+    \end{equation}
+    So by our Lemma:
+    \begin{equation}
+        Pr[T(x) = \text{Simon}_n(x)] \leq \frac{1}{2} + \frac{1}{2}\frac{d^2}{2k}
+    \end{equation}
+    in order to be $\leq 1 - \e$ we have that $d \geq \sqrt{\frac{2^k}{3}} = \Omega(\sqrt{n})$ and we are (finally) done.
+\end{proof}
+
+Remark: Simon's problem is in some sense very similar to the collision problem. A research question of interest to Daochen; can we define intermediate problems between Simon's problem and the collision problem? More precisely, $D_0^{\text{Collision}} = D_0^{\text{Simon}}$ and $D_1^{\text{Collision}} \supseteq D_1^{\text{Simon}}$. We've seen that $Q(\text{Collision}) = O(n^{1/3})$ and $R(\text{Collision}) = \Omega(\sqrt{n})$ (It turns out $Q(\text{Collision}) = \Omega(n^{1/3})$). We also showed that $Q(\text{Simon}_n) \leq O(\log n)$ and $R(\text{Simon}_n) \geq \Omega(\sqrt{n})$. Question; in QC we often have quadratic or superpolynomial speedups. Can we go in between by defining particular subsets for intermediate speedups?

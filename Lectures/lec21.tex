@@ -1,0 +1,166 @@
+\section{Adversary Method}
+\textcolor{red}{Missed this lecture - notes based on provided references.}
+
+The quantum adversary method provides a way to prove quantum query lower bounds. In fact, we will find that the generalized version is an upper bound on quantum query complexity, up to constant factors.
+
+\subsection*{Quantum adversaries}
+Motivation for the quantum adversary method comes from the following construction. Suppose the oracle is operated by an adversarial party who holds a quantum state determining the oracle string, which is in some superposition $\sum_{x \in S}\ket{a_x}\ket{x}$ over the possible oracles. To implement eac query, the adversary performs the ``super-oracle'':
+\begin{equation}
+    O \coloneqq \sum_{x \in S}\dyad{x}{x} \otimes O_x.
+\end{equation}
+An algorithm does not have direct access to the oracle string, and hence can only perform unitary operations that act as the identity on the adversary's superposition. After $t$ steps, an algorithm maps the overall state to:
+\begin{equation}
+    \ket{\psi^t} \coloneqq (I \otimes U_t)O\ldots (I \otimes U_2)O(I \otimes U_1)O\left(\sum_{x \in S}a_x \ket{x} \otimes \ket{\psi}\right) = \sum_{x \in S}a_x\ket{x} \otimes \ket{\psi^t_x}.
+\end{equation}
+The main idea of the approach is that for the algorithm to learn $x$, this state must become very entangled. To measure the entanglement of the pure state $\ket{\psi^t}$, we can consider the reduced density matrix of the oracle,
+\begin{equation}
+    \rho^t \coloneqq \sum_{x, y \in S}a_x^* a_y\braket{\psi_x^t}{\psi_y^t}\dyad{x}{y}
+\end{equation}
+Initially, the state $\rho^0$ is pure. Our goal is to quantify how mixed it must become (i.e. how entangled the overall state must be) before we can compute $f$ with error at most $\e$. To do this we could consider, for example, the entropy of $\rho^t$. However, it turns out that other measures are easier to deal with.
+
+In particular, we have the following fact about the distinguishability of quantum states
+
+\begin{factbox}{}
+    Given one of pure states $\ket{\psi}, \ket{\phi}$, we can make a measurement that determines which state we have with error probability at most $\e \in [0, 1/2]$ if and only if $\abs{\braket{\psi}{\phi}} \leq 2\sqrt{\e(1-\e)}$.
+\end{factbox}
+
+Thus, it is convenient to consider measures that are linear in the inner products $\braket{\psi_x^t}{\psi_y^t}$. 
+
+\subsection*{The adversary method}
+To obtain an adversary lower bound, we choose a matrix $\Gamma \in \RR^{\abs{S} \times \abs{S}}$ with rows and columns indexed by the possible black-box inputs. The entry $\Gamma_{x, y}$ is meant to characterize how hard it is to distinguish between $x$ and $y$. We say that $\Gamma$ is an \emph{adversary matrix} if:
+\begin{enumerate}
+    \item $\Gamma_{xy} = \Gamma_{yx}$
+    \item If $f(x) = f(y)$ then $\Gamma_{xy} = 0$.
+\end{enumerate}
+The second condition reflects that we do not need to distinguish between $x$ and $y$ if $f(x) = f(y)$.
+
+The original adversary method made the additional assumption that $\Gamma_{xy} \geq 0$ but it turns out this condition is not actually unecessary. Sometimes we refer to the \emph{negative} or \emph{generalized} adversary method to distinguish it from the original, positive-weighted method. While it may not be intuitively obvious what it would mean to give a negative weight to the entry characterizing distinguishability of two inputs, it turns out that this flexibility can lead to significantly improved lower bounds for some functions..
+
+Given an adversary matrix $\Gamma$, we can define a weight function:
+
+\begin{equation}
+    W^j \coloneqq \sum_{x, y \in S}\Gamma_{xy}a^*_x a_y\braket{\psi^j_x}{\psi^j_y}.
+\end{equation}
+
+Note that this is a simple function of the entries of $\rho^j$. The idea of the lower bound is to show that $W^j$ starts out large, must become small to compute $f$, and cannot change by much if we make a query.
+
+the initial value of the weight function is:
+\begin{equation}
+    W^0 = \sum_{x, y \in S}\Gamma_{xy}a^*_x a_y\braket{\psi^0_x}{\psi^0_y} = \sum_{x, y \in S}a_x^* \Gamma_{xy}a_y
+\end{equation}
+since $\ket{\psi^0_x}$ cannot depend on $x$. To make this as large as possible, we take $a$ to be a principal eignevector of $\Gamma$, an eigenvector with eigenvalue $\pm \norm{\Gamma}$. Then $\abs{W^0} = \norm{\Gamma}$. 
+
+The final value of the weight function is easier to bound if we assume a nonnegative adversary matrix. The final value is constrained by the fact that we must distinguish $x$ from $y$ with error probability at most $\e$ whenever $f(x) \neq f(y)$. For this to hold after $t$ queries, we need $\abs{\braket{\psi^t_x}{\psi^t_y}} \leq 2\sqrt{\e(1-\e)}$ for all pairs $x, y \in S$ with $f(x) \neq f(y)$ (by the above fact). Thus, if $\Gamma$ has nonnegative entries, we have:
+\begin{equation}
+    \abs{W^t} \leq \sum{x, y \in S}\Gamma_{xy}a_x^*a_y2\sqrt{\e(1-\e)} = 2\sqrt{\e(1-\e)}\norm{\Gamma}.
+\end{equation}
+Here we can include the terms where $f(x) = f(y)$ in the sum since $\Gamma_{xy} = 0$ for such pairs. We also used the fact that the principal eigenvector of a nonnegative matrix can be taken to have nonnegative entries (by the Perron-Frobenius theorem).
+
+
+A similar bound holds if $\Gamma$ has negative entries, but we need a different argument. In general, one can only show that $\abs{W^t} \leq (2\sqrt{\e(1-\e)} + 2\e)\norm{\Gamma}$. But if we assume $f: S \rightarrow \set{0, 1}$ has Boolean output, then we can prove the same bound as in the non-negative cae, and the proof is simpler than for a general output space. We can use the following simple result, stated in terms of the Frobenius norm $\norm{X}^2_F \coloneqq \sum_{a, b}\abs{X_{ab}}^2$:
+
+\begin{propbox}{}
+    For any $X \in \CC^{m \times n}$, $Y \in \CC^{n \times n}$, $Z \in \CC^{n \times m}$, we have $\abs{\Tr(XYZ)} \leq \norm{X}_F\norm{Y}\norm{Z_F}$.
+\end{propbox}
+\begin{proof}
+    We have:
+    \begin{equation}
+        \Tr(XYZ) = \sum_{a, b, c}X_{ab}Y_{bc}Z_{ca} = \sum_a(x^a)^\dag Y z^a
+    \end{equation}
+    where $(x^a)_b = X^*_{ab}$ and $(z^a)_c = Z_{ca}$. Thus:
+    \begin{align*}
+        \abs{\Tr(XYZ)} &\leq \sum_a \norm{x^a}\norm{Yz^a}
+        \\ &\leq \norm{Y}\sum_a \norm{x^a}\norm{z^a}
+        \\ &\leq \norm{Y}\sqrt{\sum_a \norm{x^a}^2\sum_{a'}\norm{z^{a'}}^2}
+        \\ &= \norm{Y}\norm{X}_F\norm{Z}_F
+    \end{align*}
+    as claimed, where we use Cauchy-Shwarz in the first and third steps.
+\end{proof}
+
+The upper bound $\abs{W^t}$ for the negative adversary with Boolean output, write $W^t = \Tr(\Gamma V)$ where $V_{xy} \coloneqq a_x^*a_y\braket{\psi^t_x}{\psi^t_y}\delta[f(x) \neq f(y)]$. Now define:
+\begin{equation}
+    C \coloneqq \sum_{x \in S}a_x\Pi_{f(x)}\dyad{\psi^t_x}{x}
+\end{equation}
+\begin{equation}
+    \overline{C} \coloneqq \sum_{x \in S}a_x\Pi_{1-f(x)}\dyad{\psi^t_x}{x}
+\end{equation}
+with $\Pi_0, \Pi_1$ projectors onto the $f(x)=0,1$ respectively. Then:
+\begin{equation}
+    (C^\dag\overline{C})_{xy} = a_x^*a_y\bra{\psi^t_x}\Pi_{f(x)}\Pi_{1-f(y)}\ket{\psi^t_y},
+\end{equation}
+so:
+\begin{equation}
+    (C^\dag \overline{C} + \overline{C}^\dag C)_{xy} = a_x^*a_y\bra{\psi_x^t}(\Pi_{f(x)}\Pi_{1-f(y)} + \Pi_{1-f(x)}\Pi_{f(y)})\ket{\psi^t_y} = a_x^*a_y\braket{\psi_x^t}{\psi_y^t}\delta[f(x) \neq f(y)],
+\end{equation}
+i.e. $V = C^\dag \overline{C} + \overline{C}^\dag C$. Thus we have:
+\begin{equation}
+    W^t = \Tr(\Gamma(C^\dag\overline{C} + \overline{C}^\dag C)) = \Tr(\overline{C}\Gamma C^\dag) + \Tr(C\Gamma\overline{C}^\dag).
+\end{equation}
+By the proposition, $\abs{W^t} \leq 2\norm{\Gamma}\norm{C}_F\norm{\overline{C}}_F$. Finally, we upper bound $\norm{C}_F, \norm{\overline{C}}_F$:
+\begin{equation}
+    \norm{C}_F^2 + \norm{\overline{C}}_F^2 = \sum_{x, y \in S}\abs{a_x}^2(\abs{\bra{y}\Pi_{f(x)}\ket{\psi^t_x}}^2 + \abs{\bra{y}\Pi_{1-f(x)}\ket{\psi^t_x}}^2)=1
+\end{equation}
+\begin{equation}
+    \norm{\overline{C}}_F^2 = \sum_{x \in S}\abs{a_x}^2\norm{\Pi_{1-f(x)}\ket{\psi_x^t}}^2 \leq \e
+\end{equation}
+Therefore $\norm{C}_F\norm{\overline{C}}_F \leq \max_{x \in [0, \e]}\sqrt{x(1-x)} = \sqrt{\e(1-\e)}$ assuming $\e \in [0, 1/2]$ and thus $\abs{W^t} \leq 2\sqrt{\e(1-\e)}\norm{\Gamma}$ as claimed.
+
+It remains to understand how much the weight function can decrease at each step of the algorithm. We have:
+\begin{equation}
+    W^{j+1} - W^j = \sum_{x, y \in S} \Gamma_{xy}a_x^* a_y(\braket{\psi_x^{j+1}}{\psi_y^{j+1}} - \braket{\psi_x^j}{\psi_y^j})
+\end{equation}
+Consider how the state changes when we make a query. We have $\ket{\psi_x^{j+1}} = U_{j+1}O_x\ket{\psi_x^j}$. Thus the elements of the Gram matrix of the states $\set{\ket{\psi_x^{j+1}}: x \in S}$ are:
+\begin{equation}
+    \braket{\psi_x^{j+1}}{\psi_y^{j+1}} = \bra{\psi_x^j}O_x^\dag (U_{j+1})^\dag U_{j+1}O_y\ket{\psi_y^j} = \bra{\psi_x^j}O_xO_y\ket{\psi_y^j}
+\end{equation}
+since $U_{j+1}$ is unitary and $O_x$ is Hermitian. Therefore:
+\begin{equation}
+    W^{j+1} - W^j = \sum_{x, y \in S} \Gamma_{xy}a_x^*a_Y\bra{\psi^j_x}(O_xO_y - I)\ket{\psi^j_y}.
+\end{equation}
+Observe that $O_xO_y\ket{i, b} = (-1)^{b(x_i \oplus y_i)}\ket{i, b}$. Let $P_0 = I \otimes \dyad{0}{0}$ denote the projection onto the $b = 0$ states, and let $P_i$ denote the projection $\dyad{i, 1}{i, 1}$. (As with $O_x$, the projections $P_i$ implicitly act as the identity on any ancilla registers, so $\sum_{i=0}^n P_i = I$.) Then $O_xO_y = P_0 + \sum_{i=1}^n (-1)^{x_i \oplus y_i}P_i$, so $O_xO_y - I = -2\sum_{i: x_i \neq y_i} P_i$. Thus we have:
+\begin{equation}
+    W^{j+1} - W^j = -2\sum_{x, y \in S}\sum_{i: x_i \neq y_i} \Gamma_{xy}a_x^* a_y \bra{\psi^j_x}P_i\ket{\psi^j_y}
+\end{equation}
+Now for each $i \in \set{1, \ldots, n}$, let $\Gamma_i$ be a matrix with:
+\begin{equation}
+    (\Gamma_i)_{xy} \coloneqq \begin{cases}
+        \Gamma_{xy} & \text{if $x_i \neq y_i$}
+        \\ 0 & \text{if $x_i = y_i$}
+    \end{cases}
+\end{equation}
+Then we have (doing more algebra and the proposition):
+\begin{equation}
+    \abs{W^{j+1} - W^j} \leq 2\max_{i \in \set{1, \ldots, n}}\norm{\Gamma_i}.
+\end{equation}
+Since $\abs{\Omega^0} = \norm{\Gamma}$, we have:
+\begin{equation}
+    \abs{W^t} \geq \norm{\Gamma} - 2t\max_{i \in \set{1, \ldots, n}}\norm{\Gamma_i}
+\end{equation}
+Thus, we have $\abs{W^t} \leq 2\sqrt{\e(1-\e)}\abs{\Gamma}$, we require:
+\begin{equation}
+    t \geq \frac{1-2\sqrt{\e(1-e)}}{2}\text{Adv}(f)
+\end{equation}
+where:
+\begin{equation}
+    \text{Adv}(f) \coloneqq \max_\Gamma \frac{\norm{\Gamma}}{\max_{i \in \set{1, \ldots, n}}\norm{\Gamma_i}}
+\end{equation}
+with the maximum taken over all adversary matrices $\Gamma$ for the function $f$. Sometimes the notation $\text{Adv}(f)$ is reserved for the maximization over nonnegative adversary matrices, with $\text{Adv}^\pm(f)$ for the generalized method.
+
+\subsection*{Unstructured search}
+As a simple application of this method, we prove the optimality of Grover’s algorithm. It suffices to consider the problem of distinguishing between the case of no marked items and the case of a unique marked item (in an unknown location). Thus, consider the partial function where $S$ consists of strings of Hamming weight $0$ or $1$, and $f$ is the logical OR of the input bits. 
+
+For this problem, adversary matrices take the form:
+\begin{equation}
+    \Gamma = \m{0 & \gamma_1 & \cdots & \gamma_n \\ \gamma_1 & 0 & \cdots & 0 \\ \vdots & \vdots & \ddots & \vdots \\ \gamma_n & 0 & \cdots & 0}
+\end{equation}
+for some nonnegative $\gamma_1, \ldots, \gamma_n$. By symmetry we set them all equal - this can be formalized, but for now let's just consider it as an ansatz.
+
+Setting $\gamma_1 = \ldots = \gamma_n = 1$ (since the overall scale is irrelevant for the bound), we have:
+\begin{equation}
+    \Gamma^2 = \m{n & 0 & \cdots & 0 \\ 0 & 1 & \cdots & 1 \\ \vdots & \vdots & \ddots & \vdots \\ 0 & 1 & \cdots & 1}
+\end{equation}
+which has norm $\norm{\Gamma^2} = n$, and hence $\norm{\Gamma} = \sqrt{n}$. We also have:
+\begin{equation}
+    \Gamma_1 = \m{0 & 1 & 0 & \cdots & 0 \\ 1 & 0 & 0 & \cdots & 0 \\ 0 & 0 & 0 & \cdots & 0 \\ & \vdots & \vdots & \vdots & \ddots & \vdots \\ 0 & 0 & 0 & \cdots & 0}
+\end{equation}
+and similarly for the other $\Gamma_i$, so $\norm{\Gamma_i} = 1$. Thus, we find that $\text{Adv}(\text{OR}) \geq \sqrt{n}$, and so $Q_{\e}(\text{OR}) \geq \frac{1-2\sqrt{\e(1-\e)}}{2}\sqrt{n}$. This shows that Grover's algorithm is optimal up to a constant factor (recall that Grover finds a unique marked iterm with constant probability in $\frac{\pi}{4}\sqrt{n} + o(1)$ queries).
